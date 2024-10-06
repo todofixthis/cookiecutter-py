@@ -3,6 +3,7 @@
   "author_name": "Phoenix Zerin",
   "project_name": "My Python Project",
   "github_project_name": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
+  "github_username": "todofixthis",
   "package_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
   "project_short_description": "A short description of the project",
   "pypi_project_name": "phx-{{ cookiecutter.github_project_name }}",

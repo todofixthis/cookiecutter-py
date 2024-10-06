@@ -1,5 +1,5 @@
-.. image:: https://github.com/todofixthis/{{ cookiecutter.github_project_name }}/actions/workflows/build.yml/badge.svg
-   :target: https://github.com/todofixthis/{{ cookiecutter.github_project_name }}/actions/workflows/build.yml
+.. image:: https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}/actions/workflows/build.yml/badge.svg
+   :target: https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}/actions/workflows/build.yml
 .. image:: https://readthedocs.org/projects/{{ cookiecutter.pypi_project_name }}/badge/?version=latest
    :target: http://{{ cookiecutter.pypi_project_name }}.readthedocs.io/
 
@@ -128,4 +128,4 @@ Steps to build releases are based on
 #. Attach the build artefacts to the release.
 #. Click ``Publish release``.
 
-.. _Releases page for the repo: https://github.com/todofixthis/{{ cookiecutter.github_project_name }}/releases
+.. _Releases page for the repo: https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}/releases
