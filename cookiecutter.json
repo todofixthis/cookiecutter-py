@@ -1,0 +1,12 @@
+{
+  "author_email": "phx@phx.nz",
+  "author_name": "Phoenix Zerin",
+  "project_name": "My Python Project",
+  "github_project_name": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
+  "package_name": "{{ cookiecutter.project_name.lower().replace(' ', '_') }}",
+  "project_short_description": "A short description of the project",
+  "pypi_project_name": "phx-{{ cookiecutter.github_project_name }}",
+  "python_version": "{{ cookiecutter.python_version }}",
+  "this_year": "{{ cookiecutter.this_year }}",
+  "version": "0.1.0"
+}
