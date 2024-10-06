@@ -70,4 +70,4 @@ Changelog = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutt
 Issues = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}/issues"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["test"]
