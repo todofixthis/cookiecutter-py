@@ -1,6 +1,5 @@
 # https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 name: CI
-{% set major, minor = cookiecutter.python_version.split('.') %}
 on:
   push: ~
 
@@ -13,8 +12,8 @@ jobs:
           # Note: Use quotes to avoid float cast - especially important if the
           # version number ends with 0!
           - "{{ cookiecutter.python_version }}"
-          - "{{ major }}.{{ minor | int - 1 }}"
-          - "{{ major }}.{{ minor | int - 2 }}"
+          - "{{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 1 }}"
+          - "{{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 2 }}"
 
     steps:
       - name: Clone repo

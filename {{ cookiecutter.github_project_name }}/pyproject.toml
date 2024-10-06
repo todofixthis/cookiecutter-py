@@ -40,9 +40,10 @@ include = [
 ]
 exclude = ["docs/_build"]
 packages = [{ include = "{{ cookiecutter.package_name }}", from = "src" }]
-
 [tool.poetry.dependencies]
-python = "^{{ cookiecutter.python_version }}"
+# I'm only one person, so to keep from getting overwhelmed, I'm only committing to
+# supporting the 3 most recent versions of Python.
+python = "^{{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 2 }}"
 
 [tool.poetry.group.dev.dependencies]
 autohooks = "^23"

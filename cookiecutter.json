@@ -8,6 +8,8 @@
   "project_short_description": "A short description of the project",
   "pypi_project_name": "phx-{{ cookiecutter.github_project_name }}",
   "python_version": "(see hooks/pre_prompt.py)",
+  "__python_major": "{{ cookiecutter.python_version.split('.')[0] }}",
+  "__python_minor": "{{ cookiecutter.python_version.split('.')[1] }}",
   "this_year": "(see hooks/pre_prompt.py)",
   "version": "0.1.0"
 }
