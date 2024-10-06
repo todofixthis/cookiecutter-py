@@ -13,8 +13,8 @@ jobs:
           # Note: Use quotes to avoid float cast - especially important if the
           # version number ends with 0!
           - "{{ cookiecutter.python_version }}"
-          - "{{ major }}.{{ int(minor) - 1 }}"
-          - "{{ major }}.{{ int(minor) - 2 }}"
+          - "{{ major }}.{{ minor | int - 1 }}"
+          - "{{ major }}.{{ minor | int - 2 }}"
 
     steps:
       - name: Clone repo
