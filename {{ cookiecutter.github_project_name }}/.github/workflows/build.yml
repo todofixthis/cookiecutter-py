@@ -35,10 +35,10 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
-      - name: Set up Python {% raw %}${{ matrix.python-version }}{% endraw %}
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
+          python-version: "{{ cookiecutter.python_version }}"
       - name: Install dependencies
         run: |
           pip install poetry
@@ -55,7 +55,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: {% raw %}${{ matrix.python-version }}{% endraw %}
+          python-version: "{{ cookiecutter.python_version }}"
       - name: Install dependencies
         run: |
           pip install poetry
