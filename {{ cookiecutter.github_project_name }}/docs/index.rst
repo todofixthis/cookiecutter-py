@@ -5,6 +5,8 @@
    :maxdepth: 1
    :caption: Contents:
 
+   api
+
 {{ cookiecutter.project_short_description }}
 
 Getting Started
@@ -15,9 +17,9 @@ Requirements
 ------------
 {{ cookiecutter.project_name }} is known to be compatible with the following Python versions:
 
-- 3.12
-- 3.11
-- 3.10
+- {{ cookiecutter.python_version }}
+- {{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 1 }}
+- {{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 2 }}
 
 .. note::
 
