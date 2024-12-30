@@ -53,7 +53,7 @@ autohooks-plugin-mypy = "^23"
 autohooks-plugin-pytest = "^23"
 autohooks-plugin-ruff = "^23"
 black = "^24"
-mypy = "^1"
+mypy = {extras = ["mypyc"], version = "^1"}
 pytest = "^8"
 sphinx = "^8"
 sphinx_rtd_theme = "^3"
@@ -61,7 +61,7 @@ tox = "^4"
 
 # Used by GitHub Actions.
 [tool.poetry.group.ci.dependencies]
-mypy = "^1"
+mypy = {extras = ["mypyc"], version = "^1"}
 pytest = "^8"
 sphinx = "^8"
 sphinx_rtd_theme = "^3"
@@ -72,3 +72,19 @@ Issues = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+
+[tool.tox]
+env_list = [
+    "py{{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor }}",
+    "py{{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 1 }}",
+    "py{{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 2 }}",
+]
+
+[tool.tox.env_run_base]
+skip_install = true
+allowlist_externals = ["poetry"]
+commands_pre = [["poetry", "install", "--with=ci"]]
+commands = [
+    ["poetry", "run", "pytest"],
+    ["poetry", "run", "mypyc", "src", "test"],
+]
