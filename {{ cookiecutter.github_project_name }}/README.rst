@@ -16,9 +16,9 @@ Requirements
 ------------
 {{ cookiecutter.project_name }} is known to be compatible with the following Python versions:
 
-- 3.12
-- 3.11
-- 3.10
+- {{ cookiecutter.python_version }}
+- {{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 1 }}
+- {{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 2 }}
 
 .. note::
 
@@ -60,7 +60,7 @@ If you just want to run unit tests in the current virtualenv (using
 If you just want to run type checking in the current virtualenv (using
 `mypy <https://mypy.readthedocs.io>`_)::
 
-   poetry run mypy src test
+   poetry run mypyc src test
 
 Documentation
 -------------
