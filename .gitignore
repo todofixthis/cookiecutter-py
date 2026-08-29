@@ -1,1 +1,16 @@
+# Agent worktrees
+.claude/worktrees/
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.pyc
+
+# Linting cache
+.ruff_cache
+
+# Pytest cache
+.pytest_cache
+
+# Virtual environments
 venv
+.venv
