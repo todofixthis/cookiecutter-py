@@ -84,7 +84,7 @@ dev = [
     "mypy>=2,<3",
     "pytest>=9,<10",
     "pyyaml>=6.0.3,<7.0.0",
-    "types-pyyaml",
+    "types-pyyaml>=6.0.12.20260518,<7.0.0.0",
 ]
 ci = [
     "cookiecutter>=2,<3",
@@ -118,6 +118,8 @@ testpaths = ["test"]
 - [ ] **Step 2: Port the ADR index generator verbatim**
 
 Copy `/home/user/todofixthis/class-registry/scripts/adr/generate_index.py` to `scripts/adr/generate_index.py` unchanged — it resolves `REPO_ROOT` from its own file location (`Path(__file__).resolve().parents[2]`), which is the same relative depth in this repo, so no path adjustment is needed. Create empty `scripts/__init__.py` and `scripts/adr/__init__.py` alongside it (makes `scripts` and `scripts.adr` importable packages, as `python -m scripts.adr.generate_index` requires).
+
+This ports class-registry's PyYAML-based fork rather than `phx-claude-siat`'s stdlib-only canonical version (the one `writing-adrs` names as the reference implementation) — see Intentional Decisions.
 
 - [ ] **Step 3: Port the autohooks plugin verbatim**
 
@@ -158,18 +160,17 @@ venv
 .venv
 ```
 
-- [ ] **Step 6: Sync and verify autohooks installs cleanly**
+- [ ] **Step 6: Sync dependencies**
 
 ```bash
 uv sync --group=dev
-uv run autohooks activate --mode=pythonpath
 ```
 
-Expected: completes without error; `uv.lock` is created/updated.
+Expected: completes without error; `uv.lock` is created/updated. Do **not** run `uv run autohooks activate` yet — `[tool.pytest.ini_options] testpaths = ["test"]` above points at a directory that doesn't exist until Task 2, and `autohooks.plugins.pytest` runs on every commit once the hook is active. Activating now would make Task 2's own creation commit (and this task's) fail pre-commit. Activation happens in Task 2, once `test/` exists.
 
 - [ ] **Step 7: Commit**
 
-Run `git status` to catch `uv.lock` and any other untracked files from the sync, then use the `creative-commits` skill.
+Run `git status` to catch `uv.lock` and any other untracked files from the sync, then use the `creative-commits` skill. No pre-commit hook is installed yet, so this is a plain commit.
 
 ## Task 2: Bake-and-validate test suite
 
@@ -255,9 +256,19 @@ uv run pytest test/test_bake.py -v
 
 Expected: all 5 tests PASS. If `test_generates_valid_pyproject_toml` fails on the package name, re-check `cookiecutter.json`'s default `project_name` ("My Python Project") still derives to `phx-my-python-project` via `pypi_project_name`.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Activate the autohooks pre-commit hook**
 
-Run `git status` first, then use the `creative-commits` skill.
+`test/` now exists and its tests pass, so it's now safe to turn on the hook Task 1 deliberately deferred:
+
+```bash
+uv run autohooks activate --mode=pythonpath
+```
+
+Expected: completes without error. From here on, use `uv run git commit` (per `AGENTS.md`) instead of a plain `git commit` — the active hook runs `ruff`/`black`/`mypy`/`pytest` (and `adr_index`, a no-op until `docs/adr/` exists in Task 7) on every commit from now on.
+
+- [ ] **Step 4: Commit**
+
+Run `git status` first, then use the `creative-commits` skill (`uv run git commit`, since the hook is now active).
 
 ## Task 3: Root CI workflows
 
@@ -372,7 +383,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Bake a project with default answers
-        run: uvx "cookiecutter>=2,<3" . --no-input --output-dir /tmp/baked
+        # --python pins which interpreter uvx runs cookiecutter under, since
+        # hooks/pre_prompt.py derives the generated project's Python floor
+        # from that interpreter — without this, uvx could resolve its own
+        # managed Python and bake identical output on all 3 matrix legs.
+        run: uvx --python "${{ matrix.python-version }}" "cookiecutter>=2,<3" . --no-input --output-dir /tmp/baked
       - name: Install the generated project's dependencies
         run: uv sync --group ci
         working-directory: /tmp/baked/my-python-project
@@ -1510,6 +1525,8 @@ Use the `creative-commits` skill for this final commit, then push the branch and
 - **ADRs are written last (Task 7), after the decisions they document are already implemented**, rather than before implementation as `AGENTS.md`'s general rule prescribes. This is a one-off, coordinated modernization touching many interdependent files at once (an ADR's `scope` must validate against paths that don't all exist until several other tasks complete); the general "ADR before implementation" rule applies to normal day-to-day work going forward.
 - **No GitHub App-based release automation** (`phx-claude-siat`'s `release.yml`) is ported anywhere — it needs admin-configured secrets and branch rulesets, and neither this repo nor its generated output currently publish anything through it. See Global Constraints.
 - **The generated project's `AGENTS.md` restores the `develop`/`main` gitflow branch model**, while this repo's own root `AGENTS.md` stays trunk-based `main`-only — deliberate, since a generated project is expected to eventually cut PyPI releases (where the two-branch model matters) and this template repo itself never will.
+- **`scripts/adr/generate_index.py` is ported from `class-registry`'s PyYAML-based fork, not `phx-claude-siat`'s stdlib-only canonical version** that `writing-adrs` names as the reference implementation. The two are behaviourally identical (same frontmatter rules, same `--for` mode); the canonical version stays stdlib-only because `phx-claude-siat` has no Python project root to hang a PyYAML dependency off (ADR 007 there). That constraint doesn't apply here any more than it applies to `class-registry` — this repo now has a real `pyproject.toml` and dev dependency group — and `class-registry`'s own ADR 004 already made and recorded this exact call for the same reason. Porting class-registry's version (and taking on `pyyaml`/`types-pyyaml` as dev dependencies) follows that precedent rather than re-deriving it.
+- **The root `.github/workflows/ci.yml` `test` job runs on a single Python version, with no matrix** — unlike `class-registry`'s `build` job, which matrixes 3.12/3.13/3.14. This repo's own tooling (the ADR generator, the bake-and-validate tests) isn't a published library with a version-support commitment of its own; it only needs to run under whatever Python develops it. The three-version matrix that matters — the *generated* project's support window — is exercised by `generate-and-validate.yml` instead (Task 3 Step 2).
 - **The GPG key fingerprint in the ported `release` skill and README is looked up dynamically** (`gpg --fingerprint <email>`) rather than hardcoded to the literal value found in `class-registry`'s own skill — that value is real key material observed in a sibling repo, not confirmed as intentionally identical across every future generated project, so a dynamic lookup is both safer and won't go stale.
 
 ## Self-Review Checklist
