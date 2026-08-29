@@ -62,7 +62,7 @@
 - Modify: `.gitignore`
 
 **Interfaces:**
-- Produces: `scripts.adr.generate_index.generate(adr_dir, repo_root) -> int` and `main(argv, adr_dir, repo_root) -> int`, used by Task 5's CI job and by the `.autohooks/adr_index.py` plugin created in this same task.
+- Produces: `scripts.adr.generate_index.generate(adr_dir, repo_root) -> int` and `main(argv, adr_dir, repo_root) -> int`, used by Task 3's CI job and by the `.autohooks/adr_index.py` plugin created in this same task.
 
 - [ ] **Step 1: Write `pyproject.toml`**
 
@@ -180,7 +180,7 @@ Run `git status` to catch `uv.lock` and any other untracked files from the sync,
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks (only the `cookiecutter` dependency added in Task 1).
-- Produces: nothing consumed by later tasks — this is this repo's only test suite, run by `uv run pytest` and by Task 5's `ci.yml`.
+- Produces: nothing consumed by later tasks — this is this repo's only test suite, run by `uv run pytest` and by Task 3's `ci.yml`.
 
 - [ ] **Step 1: Write the test file**
 
