@@ -91,6 +91,7 @@ ci = [
     "mypy>=2,<3",
     "pytest>=9,<10",
     "pyyaml>=6.0.3,<7.0.0",
+    "types-pyyaml>=6.0.12.20260518,<7.0.0.0",
 ]
 
 [tool.uv]
@@ -278,7 +279,7 @@ Run `git status` first, then use the `creative-commits` skill (`uv run git commi
 - Delete: `.github/dependabot.yml`
 
 **Interfaces:**
-- Consumes: `uv run pytest` / `uv run mypy scripts test` / `uv run ruff check` (Task 1), `uv run python -m scripts.adr.generate_index` (Task 1) — the `adr-index` job in `ci.yml` will show a diff until Task 5 populates `docs/adr/`; that's expected mid-plan and resolves before the branch is pushed.
+- Consumes: `uv run pytest` / `uv run mypy scripts test` / `uv run ruff check` (Task 1), `uv run python -m scripts.adr.generate_index` (Task 1) — the `adr-index` job in `ci.yml` will show a diff until Task 7 populates `docs/adr/`; that's expected mid-plan and resolves before the branch is pushed.
 
 - [ ] **Step 1: Write `.github/workflows/ci.yml`**
 
