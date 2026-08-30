@@ -1,0 +1,59 @@
+[project]
+name = "cookiecutter-py"
+version = "0.0.0"
+description = "Cookiecutter template for todofixthis Python projects"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "autohooks>=26,<27",
+    "autohooks-plugin-black>=23,<24",
+    "autohooks-plugin-mypy>=23,<24",
+    "autohooks-plugin-pytest>=23,<24",
+    "autohooks-plugin-ruff>=25,<26",
+    "cookiecutter>=2,<3",
+    "mypy>=2,<3",
+    "pytest>=9,<10",
+    "pyyaml>=6.0.3,<7.0.0",
+    "types-pyyaml>=6.0.12.20260518,<7.0.0.0",
+]
+ci = [
+    "cookiecutter>=2,<3",
+    "mypy>=2,<3",
+    "pytest>=9,<10",
+    "pyyaml>=6.0.3,<7.0.0",
+    "types-pyyaml>=6.0.12.20260518,<7.0.0.0",
+]
+
+[tool.uv]
+# This repo is a cookiecutter template, not a Python package — nothing here
+# gets built or published, so uv shouldn't try to.
+package = false
+
+[tool.ruff]
+# The templated project directory's pyproject.toml has unrendered Jinja in
+# fields ruff tries to parse as real values (e.g. requires-python) when it
+# walks the tree looking for nested project roots — it isn't a real project,
+# so exclude it rather than let ruff choke on it.
+extend-exclude = ["{{ cookiecutter.github_project_name }}"]
+
+[tool.autohooks]
+mode = "pythonpath"
+pre-commit = [
+    "adr_index",
+    "autohooks.plugins.black",
+    "autohooks.plugins.mypy",
+    "autohooks.plugins.pytest",
+    "autohooks.plugins.ruff",
+]
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+# cookiecutter ships no py.typed marker or stubs package.
+module = "cookiecutter.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["test"]

@@ -1,0 +1,55 @@
+# Bakes a real project from this template with cookiecutter and validates the
+# result the same way a maintainer of a generated project would: lint,
+# type-check, test, and build its docs.
+name: Generate and Validate
+
+on:
+  push: ~
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          # Note: Use quotes to avoid float cast - especially important if the
+          # version number ends with 0!
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Bake a project with default answers
+        # --python pins which interpreter uvx runs cookiecutter under, since
+        # hooks/pre_prompt.py derives the generated project's Python floor
+        # from that interpreter — without this, uvx could resolve its own
+        # managed Python and bake identical output on all 3 matrix legs.
+        run: uvx --python "${{ matrix.python-version }}" "cookiecutter>=2,<3" . --no-input --output-dir /tmp/baked
+      - name: Install the generated project's dependencies
+        run: uv sync --group ci
+        working-directory: /tmp/baked/my-python-project
+      - name: Lint the generated project
+        run: uv run ruff check
+        working-directory: /tmp/baked/my-python-project
+      - name: Type-check the generated project
+        run: uv run mypy src test
+        working-directory: /tmp/baked/my-python-project
+      - name: Test the generated project
+        run: uv run pytest
+        working-directory: /tmp/baked/my-python-project
+      - name: Build the generated project's docs
+        run: |
+          mkdir -p _static
+          uv run make html
+        working-directory: /tmp/baked/my-python-project/docs

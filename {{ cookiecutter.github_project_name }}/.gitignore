@@ -1,3 +1,6 @@
+# Agent worktrees
+.claude/worktrees/
+
 # Byte-compiled / optimized / DLL files
 __pycache__
 *.pyc
@@ -9,6 +12,9 @@ dist
 
 # dotenv
 .env
+
+# Linting cache
+.ruff_cache
 
 # Sphinx documentation
 docs/_build/
