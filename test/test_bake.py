@@ -61,3 +61,22 @@ def test_generates_licence(baked_project: Path) -> None:
     """The generated project ships an MIT licence file."""
     licence_text = (baked_project / "LICENCE.txt").read_text(encoding="utf-8")
     assert "MIT" in licence_text
+
+
+def test_claude_md_stays_a_symlink(baked_project: Path) -> None:
+    """CLAUDE.md survives baking as a real symlink to AGENTS.md, not a copy.
+
+    cookiecutter's own file-copy mechanism dereferences symlinks in the
+    template into independent copies; hooks/post_gen_project.py restores
+    this one so AGENTS.md stays the single canonical source.
+    """
+    claude_md = baked_project / "CLAUDE.md"
+    assert claude_md.is_symlink()
+    assert claude_md.readlink() == Path("AGENTS.md")
+
+
+def test_claude_skills_stays_a_symlink(baked_project: Path) -> None:
+    """.claude/skills survives baking as a real symlink into .agents/skills."""
+    claude_skills = baked_project / ".claude" / "skills"
+    assert claude_skills.is_symlink()
+    assert claude_skills.readlink() == Path("..") / ".agents" / "skills"
