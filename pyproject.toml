@@ -30,6 +30,13 @@ ci = [
 # gets built or published, so uv shouldn't try to.
 package = false
 
+[tool.ruff]
+# The templated project directory's pyproject.toml has unrendered Jinja in
+# fields ruff tries to parse as real values (e.g. requires-python) when it
+# walks the tree looking for nested project roots — it isn't a real project,
+# so exclude it rather than let ruff choke on it.
+extend-exclude = ["{{ cookiecutter.github_project_name }}"]
+
 [tool.autohooks]
 mode = "pythonpath"
 pre-commit = [

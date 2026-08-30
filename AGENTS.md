@@ -17,8 +17,10 @@ uv run git commit                             # always use instead of git commit
 uv sync --group=dev                           # sync deps after pulling
 uv run pytest                                 # bake the template and validate the output
 uv run mypy scripts test                      # type check
-uv run ruff check                             # lint
+uv run ruff check scripts test                # lint
 ```
+
+`scripts`/`test` are named explicitly — a bare `ruff check` walks the whole repo and trips over `{{ cookiecutter.github_project_name }}/pyproject.toml`'s unrendered Jinja (it isn't a real project; `[tool.ruff] extend-exclude` alone doesn't stop ruff's directory walk from touching it).
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
