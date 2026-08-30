@@ -2,23 +2,20 @@
 version: 2
 
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
     python: "latest"
 
-  # Install the package, so that Sphinx can generate autodocs.
-  # https://docs.readthedocs.io/en/stable/build-customization.html#install-dependencies-with-poetry
   jobs:
     post_create_environment:
-      # Install poetry
-      # https://python-poetry.org/docs/#installing-manually
-      - pip install poetry
+      # Install uv
+      # https://docs.astral.sh/uv/getting-started/installation/
+      - pip install uv
     post_install:
-      # Install dependencies with 'docs' dependency group
-      # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
+      # Install dependencies with the 'ci' dependency group.
       # VIRTUAL_ENV needs to be set manually for now.
       # See https://github.com/readthedocs/readthedocs.org/pull/11152/
-      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH poetry install --with=ci
+      - VIRTUAL_ENV=$READTHEDOCS_VIRTUALENV_PATH uv sync --group ci
 
 sphinx:
   configuration: docs/conf.py

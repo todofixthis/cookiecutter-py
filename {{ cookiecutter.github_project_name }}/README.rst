@@ -29,23 +29,23 @@ Maintainers
 -----------
 To install the distribution for local development, some additional setup is required:
 
-#. `Install poetry <https://python-poetry.org/docs/#installation>`_ (only needs to be
+#. `Install uv <https://docs.astral.sh/uv/getting-started/installation/>`_ (only needs to be
    done once).
 
 #. Run the following command to install additional dependencies::
 
-      poetry install --with=dev
+      uv sync --group=dev
 
 #. Activate pre-commit hook::
 
-      poetry run autohooks activate --mode=poetry
+      uv run autohooks activate --mode=pythonpath
 
 Running Unit Tests and Type Checker
 -----------------------------------
 Run the tests for all supported versions of Python using
 `tox <https://tox.readthedocs.io/>`_::
 
-   poetry run tox -p
+   uv run tox -p
 
 .. note::
 
@@ -55,12 +55,12 @@ Run the tests for all supported versions of Python using
 If you just want to run unit tests in the current virtualenv (using
 `pytest <https://docs.pytest.org>`_)::
 
-   poetry run pytest
+   uv run pytest
 
 If you just want to run type checking in the current virtualenv (using
 `mypy <https://mypy.readthedocs.io>`_)::
 
-   poetry run mypyc src test
+   uv run mypy src test
 
 Documentation
 -------------
@@ -72,7 +72,7 @@ To build the documentation locally:
 
 #. Build the documentation::
 
-    make html
+    uv run make html
 
 Releases
 --------
@@ -81,43 +81,56 @@ Steps to build releases are based on
 
 .. important::
 
-   Make sure to build releases off of the ``main`` branch, and check that all changes
-   from ``develop`` have been merged before creating the release!
+   Make sure to build releases off of the ``main`` branch!
+
+One-time Setup
+~~~~~~~~~~~~~~
+#. Install the ``keyring`` tool and add it to your ``PATH``::
+
+      uv tool install keyring
+      uv tool update-shell
+
+   Restart your shell after running ``update-shell``.
+#. `Create a PyPI API token <https://pypi.org/manage/account/#api-tokens>`_ and store it
+   in the OS keychain::
+
+      keyring set https://upload.pypi.org/legacy/ __token__
+
+   Paste the ``pypi-...`` token when prompted.
 
 1. Build the Project
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 #. Delete artefacts from previous builds, if applicable::
 
     rm dist/*
 
 #. Run the build::
 
-    poetry build
+    uv build
 
 #. The build artefacts will be located in the ``dist`` directory at the top level of the
    project.
 
 2. Upload to PyPI
 ~~~~~~~~~~~~~~~~~
-#. `Create a PyPI API token <https://pypi.org/manage/account/token/>`_ (you only have to
-   do this once).
-#. Increment the version number in ``pyproject.toml``.
+#. Bump the version (also updates ``uv.lock``)::
+
+      uv version <version>
+
 #. Upload build artefacts to PyPI::
 
-    poetry publish
+    uv publish --username __token__
 
 3. Create GitHub Release
 ~~~~~~~~~~~~~~~~~~~~~~~~
 #. Create a tag and push to GitHub::
 
-      git tag <version>
-      git push <version>
-
-   ``<version>`` must match the updated version number in ``pyproject.toml``.
+      git tag -a <version> -m "Release <version>"
+      git push origin <version>
 
 #. Go to the `Releases page for the repo`_.
 #. Click ``Draft a new release``.
-#. Select the tag that you created in step 1.
+#. Select the tag that you created above.
 #. Specify the title of the release (e.g., ``{{ cookiecutter.project_name }} v1.2.3``).
 #. Write a description for the release.  Make sure to include:
    - Credit for code contributed by community members.
