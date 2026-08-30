@@ -43,5 +43,10 @@ pre-commit = [
 [tool.mypy]
 strict = true
 
+[[tool.mypy.overrides]]
+# cookiecutter ships no py.typed marker or stubs package.
+module = "cookiecutter.*"
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["test"]
