@@ -82,10 +82,14 @@ git checkout main && git pull
 ### 9. Build
 ```bash
 uv sync --group=dev
-rm -f dist/*
+rm -rf dist
 uv build
 ```
-Sync first — pulling `main` may have brought in dependency changes. Artefacts land in `dist/`.
+Sync first — pulling `main` may have brought in dependency changes. Artefacts
+land in `dist/`. Nothing under `dist/` is tracked, so removing the whole
+directory is safe — and necessary: under zsh `rm -f dist/*` aborts with `no
+matches found` when `dist/` is empty or absent, and otherwise skips uv's
+`.gitignore`. `uv build` recreates both.
 
 ### 10. Tag and push
 ```bash
@@ -98,7 +102,7 @@ git push origin <version>
 
 **a. Append checksums to the release notes file:**
 ```bash
-sha256sum dist/{{ cookiecutter.pypi_project_name.replace('-', '_') }}-* >> release-<version>.md
+shasum -a 256 dist/{{ cookiecutter.pypi_project_name.replace('-', '_') }}-* >> release-<version>.md
 ```
 
 **b. GPG-sign the document and each build artefact:**
@@ -136,9 +140,15 @@ uv publish --username __token__
 
 ### 13. Clean up
 ```bash
-rm release-<version>.md release-<version>.md.asc release-<version>-body.md
+rm -f release-<version>.md release-<version>.md.asc release-<version>-body.md
+rm -rf dist
 git checkout develop && git pull
 ```
+`-f` so a re-run does not fail on a file already removed. `dist` goes too — its
+artefacts and `.sig` files are on the GitHub release and PyPI by now. To correct
+a release afterwards, fetch those assets back with `gh release download
+<version>`: a rebuilt wheel may not be byte-identical, so its checksums would
+disagree with the published notes.
 
 ### 14. Close related GitHub issues
 For every issue referenced in the release notes, close it with a comment:
