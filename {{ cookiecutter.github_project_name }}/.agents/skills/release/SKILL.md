@@ -63,10 +63,9 @@ Then read the guide and confirm it covers this release's break. No command check
 ## Phase 2 — Publish (after confirmation)
 
 ### 6. Bump version on `develop`
-```bash
-uv version <version>
-```
-This updates `pyproject.toml` and re-locks `uv.lock` in one step. Commit both files and push to `develop`.
+Edit `__version__` in `src/{{ cookiecutter.package_name }}/__init__.py`
+directly — Hatch reads the version from there, since `pyproject.toml`
+declares it `dynamic`. Commit the file and push to `develop`.
 
 ### 7. Open release PR
 ```bash
@@ -96,7 +95,9 @@ matches found` when `dist/` is empty or absent, and otherwise skips uv's
 git tag -a <version> -m "Release <version>"
 git push origin <version>
 ```
-`<version>` must match `pyproject.toml`.
+`<version>` must match `__version__` in
+`src/{{ cookiecutter.package_name }}/__init__.py`; `pyproject.toml` declares
+the version dynamic and does not carry it.
 
 ### 11. Create GitHub release
 
@@ -135,8 +136,20 @@ gh release create <version> dist/* \
 
 ### 12. Upload to PyPI
 ```bash
-uv publish --username __token__
+# Publishes only if the keyring can supply the token
+keyring get https://upload.pypi.org/legacy/ __token__ >/dev/null 2>&1 && \
+  uv publish --username __token__
 ```
+The token comes from the developer's keyring: `[tool.uv]` in `pyproject.toml`
+sets `keyring-provider = "subprocess"`, so uv shells out to a `keyring`
+executable on `PATH`. Run the check first — it exits non-zero when the keyring
+cannot supply the token, and prints nothing either way. Never echo the token to
+confirm it; that puts a live credential in the transcript.
+
+**If the check fails, stop here** and ask the developer to set
+`UV_PUBLISH_TOKEN` (which takes precedence over the keyring) and run the publish
+themselves. You cannot export it into their shell, and discovering this by
+running the upload means failing the release's one irreversible step.
 
 ### 13. Clean up
 ```bash
