@@ -1,7 +1,8 @@
 ---
-status: Accepted
+status: Archived
 date: 2026-09-10
-scope: ["{{ cookiecutter.github_project_name }}/docs/", "{{ cookiecutter.github_project_name }}/.readthedocs.yaml"]
+archived-because: Comments above autosectionlabel_prefix_document in docs/conf.py and above fail_on_warning in .readthedocs.yaml each name this decision, met while either is being edited.
+scope: ["{{ cookiecutter.github_project_name }}/docs/conf.py", "{{ cookiecutter.github_project_name }}/.readthedocs.yaml"]
 summary: Enable sphinx.ext.autosectionlabel with autosectionlabel_prefix_document = True in generated projects' docs, not its default unprefixed labels.
 revisit-when: A generated project's docs grow large enough to have collided under the default (unprefixed) setting, and prefixing has proven not to be worth its extra verbosity in practice.
 ---
@@ -97,6 +98,12 @@ add after the fact.
 - `autosectionlabel_maxdepth` stays unset, so every heading at every depth
   gets a registered label — the same unbounded growth this ADR is written
   for, not a gap in it.
+- Unlike `class-registry`/`filters`, a generated project has no ADR
+  tooling of its own (no `adr_index` plugin, no `docs/adr/`), so the
+  citing comments in `docs/conf.py` and `.readthedocs.yaml` use this
+  ADR's full GitHub URL rather than a repo-relative path, which would
+  dangle once baked into a generated project that carries no such path
+  at all.
 
 [`002`]: 002-generate-projects-with-uv-and-hatchling.md
 [`003`]: 003-manage-updates-with-renovate.md

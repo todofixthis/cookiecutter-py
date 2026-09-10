@@ -1,7 +1,8 @@
 ---
-status: Accepted
+status: Archived
 date: 2026-09-10
-scope: ["{{ cookiecutter.github_project_name }}/docs/", "{{ cookiecutter.github_project_name }}/.autohooks/", "{{ cookiecutter.github_project_name }}/pyproject.toml"]
+archived-because: Comments in .autohooks/docs_build.py and above the docs_build entry in pyproject.toml's autohooks pre-commit list each name this decision, met while either is being edited.
+scope: ["{{ cookiecutter.github_project_name }}/.autohooks/", "{{ cookiecutter.github_project_name }}/pyproject.toml"]
 summary: Generate projects with a docs_build autohooks plugin that runs sphinx-build -W -E (full re-read, not incremental) on staged docs/docstring changes, matching ReadTheDocs' fail_on_warning rather than the generate-and-validate workflow's lenient build.
 revisit-when: A generated project's autohooks pre-commit chain grows a cheaper way to catch a broken docs build than a full Sphinx rebuild.
 ---
@@ -124,8 +125,9 @@ by a docstring, so anything else pays nothing for this hook.
   pre-commit check.
 - Unlike `class-registry`/`filters`, a generated project has no ADR
   tooling of its own (no `adr_index` plugin, no `docs/adr/`), so
-  `docs_build.py`'s comments explain the `-E` rationale inline rather than
-  citing a decision record a generated project doesn't carry.
+  `docs_build.py`'s comments cite this ADR by its full GitHub URL rather
+  than a repo-relative path, which would dangle once baked into a
+  generated project that carries no such path at all.
 
 [`002`]: 002-generate-projects-with-uv-and-hatchling.md
 [`003`]: 003-manage-updates-with-renovate.md
