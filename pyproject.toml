@@ -47,6 +47,15 @@ pre-commit = [
     "autohooks.plugins.ruff",
 ]
 
+[tool.autohooks.plugins.ruff.check]
+# Unlike mypy, ruff resolves config per file (nearest ancestor
+# pyproject.toml), not from cwd — so a staged file under
+# {{ cookiecutter.github_project_name }}/ finds that directory's own
+# unrendered pyproject.toml before this one and chokes on it (see
+# [tool.ruff] above). Pinning --config here is what `extend-exclude`
+# cannot do for a file already inside the excluded directory.
+arguments = ["--output-format=concise", "--config", "pyproject.toml"]
+
 [tool.mypy]
 strict = true
 
