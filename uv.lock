@@ -403,8 +403,6 @@ ci = [
     { name = "cookiecutter" },
     { name = "mypy" },
     { name = "pytest" },
-    { name = "pyyaml" },
-    { name = "types-pyyaml" },
 ]
 dev = [
     { name = "autohooks" },
@@ -415,8 +413,6 @@ dev = [
     { name = "cookiecutter" },
     { name = "mypy" },
     { name = "pytest" },
-    { name = "pyyaml" },
-    { name = "types-pyyaml" },
 ]
 
 [package.metadata]
@@ -426,8 +422,6 @@ ci = [
     { name = "cookiecutter", specifier = ">=2,<3" },
     { name = "mypy", specifier = ">=2,<3" },
     { name = "pytest", specifier = ">=9,<10" },
-    { name = "pyyaml", specifier = ">=6.0.3,<7.0.0" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20260518,<7.0.0.0" },
 ]
 dev = [
     { name = "autohooks", specifier = ">=26,<27" },
@@ -438,8 +432,6 @@ dev = [
     { name = "cookiecutter", specifier = ">=2,<3" },
     { name = "mypy", specifier = ">=2,<3" },
     { name = "pytest", specifier = ">=9,<10" },
-    { name = "pyyaml", specifier = ">=6.0.3,<7.0.0" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20260518,<7.0.0.0" },
 ]
 
 [[package]]
@@ -1179,15 +1171,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/96/e07752635b98536177fa1f37671c8f3cdde2e724c6bcf6034b2cfb571565/tomlkit-0.15.1.tar.gz", hash = "sha256:e25bbf38843005246210a12982776f27f99cb9be67160e14434d0c0d21ee1e97", size = 180129, upload-time = "2026-07-17T01:48:04.562Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/13/bc/8c13eb66537dce1d2bd3a57132902f38d0e7f5bb46fa9f4daed9fe9d76ee/tomlkit-0.15.1-py3-none-any.whl", hash = "sha256:177a05aece5a8ca5266fd3c448abb47b8d352f09d477d3ca8332db4d89b24304", size = 49449, upload-time = "2026-07-17T01:48:05.728Z" },
-]
-
-[[package]]
-name = "types-pyyaml"
-version = "6.0.12.20260815"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9f/72/b56089aeee6c496d969bac42376bedb6e3eeab4682e1018fa3137122f94b/types_pyyaml-6.0.12.20260815.tar.gz", hash = "sha256:28764110c9cf35846e733da32d8d734df7473c5dde9ef67c3b7332ec0e819858", size = 18545, upload-time = "2026-08-15T02:41:51.532Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/08/52/eefeba09be4ef2a1eb989eb92934561e8e502a6ee3c32654996e4be7e399/types_pyyaml-6.0.12.20260815-py3-none-any.whl", hash = "sha256:6f332212b7e191f3afd5016a713c510b6340593b7ebec573c7d5d20aa5386d3b", size = 21148, upload-time = "2026-08-15T02:41:50.555Z" },
 ]
 
 [[package]]
