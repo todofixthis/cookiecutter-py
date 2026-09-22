@@ -7,7 +7,7 @@ Before writing code, check:
 
 ## Architecture Decision Records
 
-When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `writing-adrs` skill for the format and conventions. ADRs live in `docs/adr/`. Before writing, run `ls docs/adr/` to find the highest existing number and increment it.
+When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `phx:writing-adrs` skill for the format and conventions. ADRs live in `docs/adr/`. Before writing, run `ls docs/adr/` to find the highest existing number and increment it.
 
 ## Commands
 
@@ -16,11 +16,11 @@ uv run autohooks activate --mode=pythonpath   # install pre-commit hook (once pe
 uv run git commit                             # always use instead of git commit (runs autohooks)
 uv sync --group=dev                           # sync deps after pulling
 uv run pytest                                 # bake the template and validate the output
-uv run mypy hooks scripts test                # type check
-uv run ruff check hooks scripts test          # lint
+uv run mypy hooks test                        # type check
+uv run ruff check hooks test                  # lint
 ```
 
-`hooks`/`scripts`/`test` are named explicitly — a bare `ruff check` walks the whole repo and trips over `{{ cookiecutter.github_project_name }}/pyproject.toml`'s unrendered Jinja (it isn't a real project; `[tool.ruff] extend-exclude` alone doesn't stop ruff's directory walk from touching it).
+`hooks`/`test` are named explicitly — a bare `ruff check` walks the whole repo and trips over `{{ cookiecutter.github_project_name }}/pyproject.toml`'s unrendered Jinja (it isn't a real project; `[tool.ruff] extend-exclude` alone doesn't stop ruff's directory walk from touching it).
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
@@ -30,7 +30,6 @@ This repo is a [cookiecutter](https://cookiecutter.readthedocs.io/) template, no
 
 - `cookiecutter.json` / `hooks/pre_prompt.py` — the prompts a user answers, plus a pre-prompt hook that fills in `python_version` (from the host interpreter) and `this_year` before prompting starts.
 - `{{ cookiecutter.github_project_name }}/` — the templated project content. Everything a generated project ships (its own `pyproject.toml`, CI, docs, agent infra) lives here, separate from this repo's own dev tooling below.
-- `scripts/` — this repo's own dev tooling (the ADR index generator).
 - `test/` — bakes the template with default answers and asserts the output is well-formed (no leftover Jinja markers, valid `pyproject.toml`, etc.). This is this repo's only test suite; there's no source package of its own to unit-test.
 
 The `.github/workflows/generate-and-validate.yml` workflow goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.

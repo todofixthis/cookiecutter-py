@@ -23,4 +23,4 @@ You'll be prompted for a project name, a short description, and an author name/e
 
 ## Developing this template
 
-See `AGENTS.md` for the dev workflow (`uv sync --group=dev`, `uv run pytest` bakes the template and checks the output, `uv run mypy hooks scripts test`, `uv run ruff check hooks scripts test`).
+See `AGENTS.md` for the dev workflow (`uv sync --group=dev`, `uv run pytest` bakes the template and checks the output, `uv run mypy hooks test`, `uv run ruff check hooks test`).

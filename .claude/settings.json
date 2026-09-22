@@ -1,8 +1,15 @@
 {
   "enabledPlugins": {
-    "phx@todofixthis": true
+    "phx@todofixthis": true,
+    "superpowers@obra": true
   },
   "extraKnownMarketplaces": {
+    "obra": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
+    },
     "todofixthis": {
       "source": {
         "source": "github",

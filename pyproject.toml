@@ -14,15 +14,11 @@ dev = [
     "cookiecutter>=2,<3",
     "mypy>=2,<3",
     "pytest>=9,<10",
-    "pyyaml>=6.0.3,<7.0.0",
-    "types-pyyaml>=6.0.12.20260518,<7.0.0.0",
 ]
 ci = [
     "cookiecutter>=2,<3",
     "mypy>=2,<3",
     "pytest>=9,<10",
-    "pyyaml>=6.0.3,<7.0.0",
-    "types-pyyaml>=6.0.12.20260518,<7.0.0.0",
 ]
 
 [tool.uv]
@@ -40,7 +36,6 @@ extend-exclude = ["{{ cookiecutter.github_project_name }}"]
 [tool.autohooks]
 mode = "pythonpath"
 pre-commit = [
-    "adr_index",
     "autohooks.plugins.black",
     "autohooks.plugins.mypy",
     "autohooks.plugins.pytest",
