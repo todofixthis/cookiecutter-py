@@ -69,11 +69,7 @@ Resources, in dependency order:
 3. `terraform_data` push step. Its `local-exec` adds `origin` (the SSH URL) if it's missing, then runs `git push --no-verify origin develop main`. `--no-verify` keeps the pre-push hook out of `apply`. Both local branches must exist. The step is replaced only when the repo is.
 4. `github_branch_default` → `develop`.
 5. The three rulesets. They come after the push because `trunk-main` has no bypass and `do_not_enforce_on_create` is off, so creating `main` while the ruleset existed would fail the required check.
-   The rulesets are created whatever the visibility; the module never skips them silently. Unverified here: on GitHub Free, rulesets on a private repo need GitHub Pro. If so, a private repo on Free gets one of two outcomes, at creation or on going private, and neither has been verified:
-   - GitHub refuses the ruleset. Creation fails `apply` after the repo is created, pushed and given its default branch, which is a half-applied state. On an existing repo, refresh errors make every later `plan` fail, `scripts/infra-plan` included.
-   - GitHub accepts the ruleset but doesn't enforce it, and nothing errors.
-
-   Either way the README names it and gives one way out: upgrade to Pro and apply again, or follow the "Private to public" procedure. The first private bake confirms which outcome is real, and the README is corrected then.
+   The rulesets are created whatever the visibility. The maintainer is on GitHub Free, where rulesets on a private repo presumably need Pro (unverified), and has accepted that a private repo's rulesets may exist but not be enforced. Keeping them means they start enforcing as soon as the repo goes public. The other possible outcome, also unverified, is that GitHub refuses them outright. Then a private `apply` fails after the repo is created, pushed and given its default branch, and on an existing repo every later `plan` fails at refresh. If a private `apply` ever shows refusal, the follow-up is to create the rulesets only for public repos. The module ADR records this with that revisit-when; nothing forces a private bake to happen sooner.
 6. `github_app_installation_repository` for Renovate, only when `renovate_installation_id` is set. Renovate is installed on selected repos only. Untested: whether the endpoint accepts `gh auth token`'s OAuth token. If not, fall back to `GITHUB_TOKEN`.
 
 Outputs: `html_url`, `ssh_clone_url`, `http_clone_url`.
@@ -171,9 +167,13 @@ Cloud sessions install neither hook, so the pre-push hook is the maintainer's si
 ### Generated project docs
 
 - README, "Change visibility" (edit the `visibility` local in `infra/github/main.tf`):
-  - **Public to private:** plan and apply. It's lossy (unverified here: GitHub erases stars and watchers, and detaches forks), so the plan comment is the moment to check it's intended. On GitHub Free, see the private-repo ruleset outcomes under the module's resources.
+  - **Public to private:** plan and apply. It's lossy (unverified here: GitHub erases stars and watchers, and detaches forks), so the plan comment is the moment to check it's intended. See "Private repos on GitHub Free".
   - **Private to public:** first run `gh repo edit --visibility public --accept-visibility-change-consequences`, then plan and apply. A single `apply` can't do it: the provider sends `security_and_analysis` in its first API call, while the repo is still private, and only changes visibility in a second call. `plan` succeeds, so only `apply` would fail.
-- README, "Create the GitHub repo": bake, then `terraform -chdir=infra/github init`, then `apply`. For a private project on GitHub Free, it covers the half-applied state and the way out (see the module's resources). Afterwards, `apply` from `develop` after each merged PR that changes `infra/`. To unblock a PR you didn't push yourself (Renovate bumping the module ref or the lock, or a cloud agent's PR), run `gh pr checkout <n>` and then `scripts/infra-plan`.
+- README, "Create the GitHub repo": bake, then `terraform -chdir=infra/github init`, then `apply`. For a private project, see "Private repos on GitHub Free". Afterwards, `apply` from `develop` after each merged PR that changes `infra/`. To unblock a PR you didn't push yourself (Renovate bumping the module ref or the lock, or a cloud agent's PR), run `gh pr checkout <n>` and then `scripts/infra-plan`.
+- README, "Private repos on GitHub Free", referenced by both bullets above:
+  - Rulesets may exist without being enforced. That's accepted, and they enforce once the repo is public.
+  - Or GitHub may refuse them. Then a fresh `apply` stops half-applied, after the repo is created and pushed, and on an existing repo every `plan` fails, so the `infra-plan` guard can't pass.
+  - The ways out of refusal: upgrade to Pro and apply again, or make the repo public via "Private to public". A free fix that keeps the repo private is the pending follow-up; link the module repo's ADR that names it.
 - Release skill (`.agents/skills/release/`): step 15 ("Rebase `develop` onto `main`") is replaced, not supplemented. The new step merges `origin/main` into `develop` (fast-forward when it can) and pushes, using the Admin bypass. Without a back-merge, each release's merge commit on `main` leaves the next release PR out of date, and the strict check blocks it (`allow_update_branch` is off). A rebase would rewrite any commits `develop` gained during the release, so the push would be rejected. The module repo's release docs carry the same step.
 - `AGENTS.md`:
   - `infra/github/` is the source of truth for repo settings. Never change them in the UI.
@@ -184,7 +184,7 @@ Cloud sessions install neither hook, so the pre-push hook is the maintainer's si
 ## ADRs
 
 - Module repo:
-  - Share the repo standard as a versioned module. Covers `archive_on_destroy`, and the deferred release App: Terraform can't create Apps (no provider resource), so the next iteration takes one existing shared App, by slug for the App ID plus its installation ID.
+  - Share the repo standard as a versioned module. Covers creating rulesets on private repos on GitHub Free, accepting non-enforcement (revisit when a private `apply` shows refusal: create rulesets for public repos only). Also covers `archive_on_destroy`, and the deferred release App: Terraform can't create Apps (no provider resource), so the next iteration takes one existing shared App, by slug for the App ID plus its installation ID.
   - No secrets in Terraform state. Secrets go through `gh secret set`. Breach signals: a `sensitive` input, or a `github_actions_secret` resource. Revisit-when records remote state plus OIDC as the route to CI-run plans.
 - Each template: provision the generated project's GitHub repo through the module, including the PR-comment plan guard and why CI can't plan with local state.
 
