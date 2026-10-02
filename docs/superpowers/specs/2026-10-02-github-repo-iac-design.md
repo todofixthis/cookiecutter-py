@@ -9,7 +9,7 @@ Every project baked from `todofixthis/cookiecutter-py` or `todofixthis/cookiecut
 In scope:
 
 - A new shared module repo, `todofixthis/terraform-github-repository`.
-- Both templates: a root module, post-gen hook steps, CI changes, a plan script and hooks, docs, ADRs.
+- Both templates: a root module, post-gen hook steps, CI changes, a plan script and hooks, docs, ADRs, and a `renovate.json` rule in both the template repo and the generated project.
 
 Out of scope:
 
@@ -89,14 +89,14 @@ Bootstrap, once:
 
 ### Root module: `infra/github/`
 
-- `main.tf` declares `integrations/github` in `required_providers`, so Renovate maintains it and its lock hashes. It sets the provider `owner` to `github_username` and calls the module pinned to a tag, passing:
+- `main.tf` declares `integrations/github` in `required_providers`, so Renovate maintains it and its lock hashes. The constraint is a major-version range (`~> X.0`), never an exact pin, so a module release that raises the floor within that major only needs `init -upgrade`. A module release that moves to a new provider major also needs this constraint edited on the bump branch. It sets the provider `owner` to `github_username` and calls the module pinned to a tag, passing:
   - `name` and `description`.
   - `homepage_url`: the project's ReadTheDocs URL for `public`, `null` for `private`, because RTD's community tier can't build private repos. The root module derives it in HCL from a single `visibility` local, so changing visibility later is a one-line edit. The baked RTD config and badges stay either way; for a private project they're inert until it goes public.
   - `visibility = local.visibility`. That local is the only place the new cookiecutter choice variable `github_visibility` is rendered (`public` first, so it's the default), as a string literal. Both the module argument and `homepage_url` read the local, so editing it changes both.
   - `renovate_installation_id`, from a new cookiecutter variable with an empty default. The maintainer sets it once in `~/.cookiecutterrc`'s `default_context`.
 - Jinja in `infra/github/` appears only inside HCL string literals, so the unrendered template is still valid HCL. That lets the template repo's own Renovate run `terraform` there. The empty Renovate ID becomes `null` with an HCL conditional, not `{% if %}`.
 - State is local. `.terraform/` and `terraform.tfstate*` are gitignored. Backups are the maintainer's.
-- `.terraform.lock.hcl` is committed, with hashes for `darwin_arm64`, `darwin_amd64`, `linux_arm64` and `linux_amd64`. It has to ship in the template because the post-gen hook commits before `init` runs. The template repo's Renovate keeps the template's copy current; each generated project's Renovate keeps its own.
+- `.terraform.lock.hcl` is committed, with hashes for at least `darwin_arm64`, `darwin_amd64`, `linux_arm64` and `linux_amd64`. Renovate's own lock updates add every platform the registry lists, so tests mustn't assert exactly four. It has to ship in the template because the post-gen hook commits before `init` runs. Renovate keeps each copy current for provider bumps; module bumps that move the provider constraint need a manual lock update (see Updates).
 
 ### Post-gen hook
 
@@ -126,8 +126,10 @@ Any failure fails the bake.
 | Situation | Behaviour | Exit |
 |---|---|---|
 | `terraform` not on `PATH` | ⚠️ "terraform not installed; cannot plan" | 0 |
+| `init` fails, in any row below | ⚠️ "init failed; on a module bump, run `terraform init -upgrade` then `terraform providers lock` for the four platforms, and commit the lock". Any `init` failure prints this; no error-text matching. Nothing is posted | `init`'s |
+| `init` succeeds but changes `.terraform.lock.hcl`, in any row below | ⚠️ "init changed the lock file; commit it and re-run". The script hashes the lock just before `init` and compares after, so a lock edit the maintainer hasn't committed yet doesn't count. Nothing is posted | 1 |
 | No `infra/github/terraform.tfstate` | ⚠️ "state not available; plan must run on the maintainer's machine", then `init -input=false -backend=false` and `validate` | `validate`'s |
-| State present, the infra paths have uncommitted or untracked changes | `init -input=false`, `plan -input=false`, printed; ⚠️ "infra paths are dirty; comment not posted" | `plan`'s |
+| State present, the infra paths have uncommitted or untracked changes (checked before `init`) | `init -input=false`, `plan -input=false`, printed; ⚠️ "infra paths are dirty; comment not posted" | `plan`'s |
 | State present, clean | `init -input=false`, then `plan -input=false`, printed. If the branch has a PR, create or update the plan comment. Posting a comment doesn't trigger CI, so if a completed, failed `pull_request` run exists for `HEAD`'s SHA (`gh run list --commit "$(git rev-parse HEAD)" --event pull_request`), it reruns that run with `gh run rerun --failed`. If the run for `HEAD` is still in progress, it prints ⚠️ "CI run still in progress; if it fails, rerun with `gh run rerun --failed <id>`". It doesn't wait, since it runs in pre-push. If there's no run for `HEAD` yet, it reruns nothing: the push being guarded triggers a fresh run, which finds the comment. Otherwise ⏭️ "no PR yet; re-run once one exists" | `plan`'s |
 
 #### Path logic
@@ -136,7 +138,7 @@ Any failure fails the bake.
 - generated projects: `^infra/`;
 - module repo: `^(infra/|[^/]+\.tf$)`.
 
-`scripts/infra-plan` is the same file in every repo. The templates ship a verbatim copy of the module repo's script at the pinned tag, and only `.infra-paths` differs. Both templates list `scripts/infra-plan` and `.infra-paths` in `cookiecutter.json`'s `_copy_without_render`, so Jinja never touches them (`${#arr[@]}` alone would start a Jinja comment). When a module release changes the script, the template's Renovate PR bumping the ref fails the byte-identical check until the script is copied across. That failure is the intended drift signal. Its subcommands:
+`scripts/infra-plan` is the same file in every repo when it ships (generated projects can fall behind; see Updates). The templates ship a verbatim copy of the module repo's script at the pinned tag, and only `.infra-paths` differs. Both templates list `scripts/infra-plan` and `.infra-paths` in `cookiecutter.json`'s `_copy_without_render`, so Jinja never touches them (`${#arr[@]}` alone would start a Jinja comment). When a module release changes the script, the template's Renovate PR bumping the ref fails the byte-identical check until the script is copied across. That failure is the intended drift signal. Its subcommands:
 
 - `hash` prints the **infra hash**: `git ls-tree -r -z HEAD`, filtered on the path column, piped to `git hash-object --stdin`. It reads the committed tree only.
 - `changed <base> <head>` computes `merge-base(base, head)` itself, then diffs it against `head` with `git diff -z --name-only --no-renames`, filtered. Callers pass raw SHAs: CI passes `base.sha` and `head.sha`; pre-push passes the remote and local SHAs, or `origin/develop` and the local SHA for a new branch. It exits 0 if anything changed, 1 if nothing did, and 2 or more on any error (unknown SHA, missing merge-base). CI and the pre-push hook treat an error as a failure, never as "unchanged". CI checks out with `fetch-depth: 0` so the merge-base exists.
@@ -157,7 +159,7 @@ The plan comment holds a marker, the infra hash, and the plan in a collapsed blo
 It runs `scripts/infra-plan` only when the pushed commits change the infra paths. The hook reads git's ref list from stdin first, then calls the script with stdin from `/dev/null`. For each pushed ref:
 - **Deletion** (local SHA all zeros): skipped.
 - **A ref that isn't the checked-out branch:** ⏭️ skipped with a warning, because the script plans and hashes `HEAD` and posts to the current branch's PR.
-- **Otherwise:** it runs `scripts/infra-plan changed <remote> <local>`, or `changed origin/develop <local>` for a new branch (remote SHA all zeros). Exit 2 or more blocks the push.
+- **Otherwise:** it runs `scripts/infra-plan changed <remote> <local>`, or `changed origin/develop <local>` for a new branch (remote SHA all zeros). Exit 2 or more blocks the push. So does a non-zero exit from the plan-mode run that follows; the rows that exit 0 by design, such as terraform not installed, don't block.
 
 - Browser plugin: `.husky/pre-push`, installed by `pnpm install`.
 - Python: autohooks manages `pre-commit` only. The hook is committed as `scripts/git-hooks/pre-push`, and the "once per clone" step that runs `autohooks activate` also symlinks it into `$(git rev-parse --git-path hooks)`, which works in worktrees.
@@ -173,18 +175,33 @@ Cloud sessions install neither hook, so the pre-push hook is the maintainer's si
 - README, "Private repos on GitHub Free", referenced by both bullets above:
   - Rulesets may exist without being enforced. That's accepted, and they enforce once the repo is public.
   - Or GitHub may refuse them. Then a fresh `apply` stops half-applied, after the repo is created and pushed, and on an existing repo every `plan` fails, so the `infra-plan` guard can't pass.
+  - While refusal holds, the pre-push hook blocks every push touching `infra/`; `git push --no-verify` gets past it, and the CI guard still holds the PR.
   - The ways out of refusal: upgrade to Pro and apply again, or make the repo public via "Private to public". A free fix that keeps the repo private is the pending follow-up; link the module repo's ADR that names it.
 - Release skill (`.agents/skills/release/`): step 15 ("Rebase `develop` onto `main`") is replaced, not supplemented. The new step merges `origin/main` into `develop` (fast-forward when it can) and pushes, using the Admin bypass. Without a back-merge, each release's merge commit on `main` leaves the next release PR out of date, and the strict check blocks it (`allow_update_branch` is off). A rebase would rewrite any commits `develop` gained during the release, so the push would be rejected. The module repo's release docs carry the same step.
 - `AGENTS.md`:
   - `infra/github/` is the source of truth for repo settings. Never change them in the UI.
-  - Before opening a PR that touches `infra/`, run `scripts/infra-plan`, check the plan matches the intended change, and report it. If it warns that terraform isn't installed or state isn't available, tell the user the PR needs a local plan before CI goes green.
+  - Before opening a PR that touches `infra/`, run `scripts/infra-plan`, check the plan matches the intended change, and report it. If it warns that terraform isn't installed or state isn't available, tell the user the PR needs a local plan before CI goes green. If `init` fails on a PR that doesn't bump the module, report the error rather than following the script's module-bump hint.
   - Never write the plan marker comment by hand.
   - Never put secrets in Terraform. Set them with `gh secret set`.
+
+## Updates
+
+Renovate opens the module-bump PRs in every dependent repo, with no extra config. Its Terraform manager recognises `github.com/<owner>/<repo>?ref=<tag>` module sources and looks up new versions from the module repo's tags. `config:recommended`, which all three `renovate.json` files extend, enables that manager. Renovate is installed on both template repos, and on each generated project through `renovate_installation_id`.
+
+- A module release is a semver tag (`vX.Y.Z`) on the module repo's `main`. Renovate picks it up on its next scheduled run in each dependent repo.
+- **Generated projects:** every module-bump PR changes `infra/`, so the `infra-plan` guard holds it until the maintainer runs `scripts/infra-plan`. That plan shows what the new version would change on that repo. Module bumps are never auto-merged.
+- **Template repos:** they have no `infra-plan` guard. `generate-and-validate` gates their bump PRs: `init`, `validate` and the byte-identical check.
+- **The module repo:** it uses `source = "../.."`, so it gets no bump PRs.
+- **The module `source` stays a literal string,** with no Jinja: `github.com/todofixthis/terraform-github-repository?ref=vX.Y.Z`. Renovate takes everything after `ref=` as the tag, so templating it would silently break updates. CI reads the pinned tag by parsing `main.tf`.
+- **A new provider major arrives only through a module release.** Both template repos' own `renovate.json`, and the generated project's, disable major updates for `integrations/github` with a `packageRule` (`matchPackageNames: ["integrations/github"]`, `matchUpdateTypes: ["major"]`, `enabled: false`). Otherwise Renovate would open root-constraint PRs that conflict with the module's own constraint and can't pass. The module repo's `renovate.json` keeps major updates, because that's where the major move happens. Renovate gives provider deps `packageName: "integrations/github"` and `depName: "github"` (from its Terraform manager source). The plan confirms with a Renovate dry run that the rule matches.
+- **Renovate never touches the lock file on a module bump.** It only updates `.terraform.lock.hcl` for provider dependencies. If a release raises the `integrations/github` constraint beyond what the lock holds, plain `init` fails, in `generate-and-validate` and in `scripts/infra-plan` alike. Even when the locked version still satisfies the new constraint, `init` may rewrite the lock's `constraints` line, which leaves the infra paths dirty. Either way, the fix is on the bump branch: run `terraform init -upgrade`, then `terraform providers lock` for the four platforms, and commit the result. `scripts/infra-plan` keeps plain `init`, and its table covers both cases. Where the table's warning differs from this paragraph, the table governs: when `init` only rewrote the lock, committing that rewrite is enough, and safer than `-upgrade`, which would also move the locked provider version. `generate-and-validate` fails a template's bump PR when the lock is stale. Module release notes call out any provider-constraint change.
+- When a release changes `scripts/infra-plan`, each template's bump PR fails the byte-identical check until the script is copied across by hand. Automating the copy is out of scope: the Mend-hosted app blocks `postUpgradeTasks` commands by default, and a commit pushed by a workflow with the default token doesn't re-trigger CI.
+- Generated projects have no byte-identical check, so after a script-changing release they keep their old copy. That's harmless, because the copy still agrees with the project's own CI; the project just misses improvements until someone copies the new script in.
 
 ## ADRs
 
 - Module repo:
-  - Share the repo standard as a versioned module. Covers creating rulesets on private repos on GitHub Free, accepting non-enforcement (revisit when a private `apply` shows refusal: create rulesets for public repos only). Also covers `archive_on_destroy`, and the deferred release App: Terraform can't create Apps (no provider resource), so the next iteration takes one existing shared App, by slug for the App ID plus its installation ID.
+  - Share the repo standard as a versioned module. Covers distributing updates through Renovate (see Updates), creating rulesets on private repos on GitHub Free, accepting non-enforcement (revisit when a private `apply` shows refusal: create rulesets for public repos only). Also covers `archive_on_destroy`, and the deferred release App: Terraform can't create Apps (no provider resource), so the next iteration takes one existing shared App, by slug for the App ID plus its installation ID.
   - No secrets in Terraform state. Secrets go through `gh secret set`. Breach signals: a `sensitive` input, or a `github_actions_secret` resource. Revisit-when records remote state plus OIDC as the route to CI-run plans.
 - Each template: provision the generated project's GitHub repo through the module, including the PR-comment plan guard and why CI can't plan with local state.
 
@@ -211,7 +228,7 @@ Cloud sessions install neither hook, so the pre-push hook is the maintainer's si
 - Template `generate-and-validate.yml`:
   - Sets a git identity before baking.
   - Runs `terraform init`, `validate` and `fmt -check` on the baked `infra/github/`, which proves the pinned module ref resolves.
-  - Checks that `scripts/infra-plan` exits 0 with its warning in the no-state case.
+  - Checks that `scripts/infra-plan` exits 0 with its warning in the no-state case, and that `init` left the baked `infra/github/.terraform.lock.hcl` unchanged (`git diff --exit-code`), so a stale lock in the template fails its bump PR rather than shipping.
   - Checks that the baked `scripts/infra-plan` is byte-identical to the module repo's at the pinned tag, so the template copy can't drift. The fixture tests live in the module repo only.
 - Not testable here: a real `apply`. The first end-to-end run is the maintainer's, on the first project baked.
 
