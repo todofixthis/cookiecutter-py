@@ -212,6 +212,18 @@ def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
     )
 
 
+def test_ci_never_checks_template_drift(baked_project: Path) -> None:
+    """No file under the baked ``.github/`` mentions ``copier-answers``."""
+    # A drift check behind `gate` would fail every PR once a template release
+    # lands; Renovate's update PR is how template drift reaches a project.
+    offenders = [
+        path.relative_to(baked_project)
+        for path in (baked_project / ".github").rglob("*")
+        if path.is_file() and "copier-answers" in path.read_text(encoding="utf-8")
+    ]
+    assert not offenders
+
+
 def test_adr_pin_is_sha_with_version(baked_project: Path) -> None:
     """The ``adrs`` job pins a commit SHA with a trailing version comment."""
     # Read as text: `yaml.safe_load` strips the trailing comment, which
