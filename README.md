@@ -24,3 +24,5 @@ You'll be prompted for a project name, a short description, and an author name/e
 ## Developing this template
 
 See `AGENTS.md` for the dev workflow (`uv sync --group=dev`, `uv run pytest` bakes the template and checks the output, `uv run mypy hooks test`, `uv run ruff check hooks test`).
+
+`uv run pytest` bakes from the git-tracked files as they stand on disk, so edits to tracked files are picked up without staging, but a new template file isn't baked until it's `git add`-ed. It needs `git` and a git checkout: outside one, every bake test errors with `git ls-files` exiting 128.
