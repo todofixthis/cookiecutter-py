@@ -60,7 +60,7 @@ This repo is a [copier](https://copier.readthedocs.io/) template, not a Python p
 
 CI goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.
 
-To rotate the supported Python range in this repo, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, and the bake job's Python matrix in CI.
+To rotate the supported Python range in this repo, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, and the `generate` job's Python matrix in `ci.yml`.
 
 A template change reaches existing projects only once it's released: Renovate's copier manager then opens a PR in every project whose `.copier-answers.yml` records this template. See Releases.
 

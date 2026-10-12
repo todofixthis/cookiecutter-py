@@ -1,7 +1,6 @@
 # cookiecutter-py
 
 [![CI](https://github.com/todofixthis/cookiecutter-py/actions/workflows/ci.yml/badge.svg)](https://github.com/todofixthis/cookiecutter-py/actions/workflows/ci.yml)
-[![Generate and Validate](https://github.com/todofixthis/cookiecutter-py/actions/workflows/generate-and-validate.yml/badge.svg)](https://github.com/todofixthis/cookiecutter-py/actions/workflows/generate-and-validate.yml)
 
 A [copier](https://copier.readthedocs.io/) template for new Python projects, wired up with `uv`, `hatchling`, Sphinx/ReadTheDocs docs, and the shared `phx` agent tooling from the start.
 
