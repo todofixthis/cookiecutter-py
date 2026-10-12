@@ -16,6 +16,11 @@ dist
 # Linting cache
 .ruff_cache
 
+# Release artefacts (local working files)
+release-*-body.md
+release-*.md
+release-*.md.asc
+
 # Sphinx documentation
 docs/_build/
 

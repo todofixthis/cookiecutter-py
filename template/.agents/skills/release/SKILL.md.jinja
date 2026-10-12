@@ -30,7 +30,7 @@ gh issue view <number> --json title,body,labels
 ```
 
 ### 3. Draft release notes
-Using the commit list, PR descriptions, and issue context, draft the release notes following the _Writing Release Notes_ guide below, and write them to `release-<version>.md` in the repo root (steps 7 and 11 read it). When a bullet relates to a GitHub issue, prefix it with `[% raw %][#number][% endraw %]`. Run the `nz-english` skill on the draft, then present it to the developer for review and incorporate feedback before proceeding.
+Using the commit list, PR descriptions, and issue context, draft the release notes following the _Writing Release Notes_ guide below, and write them to `release-<version>.md` in the repo root (gitignored; steps 7 and 11 read it). Name it for the likely version, and rename it if the version confirmed at the Phase 1 stop differs. When a bullet relates to a GitHub issue, prefix it with `[% raw %][#number][% endraw %]`. Run the `nz-english` skill on the draft, then present it to the developer for review and incorporate feedback before proceeding.
 
 ### 4. Recommend version number
 Based on the changes, recommend a semver bump:

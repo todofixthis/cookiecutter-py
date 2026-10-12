@@ -268,3 +268,16 @@ def test_release_skill_single_checksums_heading(baked_project: Path) -> None:
     """The release skill does not append a second checksums heading."""
     skill = read_release_skill(baked_project)
     assert 'echo -e "\\n# SHA256 Checksums"' not in skill
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["release-2.0.0.md", "release-2.0.0-body.md", "release-2.0.0.md.asc"],
+)
+def test_gitignore_covers_release_files(baked_project: Path, name: str) -> None:
+    """Git ignores the release skill's working files."""
+    subprocess.run(["git", "init", "-q"], cwd=baked_project, check=True)
+    result = subprocess.run(
+        ["git", "check-ignore", "-q", name], cwd=baked_project, check=False
+    )
+    assert result.returncode == 0
