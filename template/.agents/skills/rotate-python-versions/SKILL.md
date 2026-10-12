@@ -10,7 +10,7 @@ Update all version references consistently when adding or dropping Python suppor
 ## Locations to update
 
 - **`pyproject.toml`** — `requires-python` constraint, `Programming Language :: Python :: 3.x` classifiers and `[tool.tox]` `env_list`
-- **`uv.lock`** — regenerate with `uv lock` after changing `requires-python`, and commit it with the other edits; CI's `uv sync --locked` fails on a stale lockfile
+- **`uv.lock`** — regenerate with `uv lock` after changing `requires-python`, and commit it with the other edits; a stale lock no longer matches `pyproject.toml`, so CI's `uv sync` silently re-resolves it and tests dependencies nobody committed (`uv lock --check` confirms it is current)
 - **`.github/workflows/`** — CI matrix `python-version` list (each entry must match a tox environment)
 - **`docs/` and `README.rst`** — requirements/compatibility version list (not ADRs under `docs/adr/`, which record the versions at the time of each decision)
 - **`AGENTS.md`** — any version range mentioned in comments
@@ -27,7 +27,7 @@ Dependencies can lack wheels for a new version even after its final release. If 
 
 ## Apply the new range through copier
 
-The `python_version` answer in `.copier-answers.yml` is the newest supported version; the template derives `requires-python`, the tox environments, the CI matrix and the version lists in `README.rst` and `docs/` from it. Once the checks in Key detail have passed, commit or stash any local changes (`copier update` needs a clean working tree), then run `copier update --defaults --vcs-ref=:current: --data python_version=X.Y` (`:current:` keeps the project on its current template version). Follow it with `uv lock`, and check each location above by hand for anything the template doesn't generate.
+The `python_version` answer in `.copier-answers.yml` is the newest supported version; the template derives `requires-python`, the tox environments, the CI matrix and the version lists in `README.rst` and `docs/` from it. Once the checks in Key detail have passed, commit or stash any local changes (`copier update` needs a clean working tree), then run `uvx "copier>=9,<10" update --defaults --vcs-ref=:current: --data python_version=X.Y` (`:current:` keeps the project on its current template version). Follow it with `uv lock`, and check each location above by hand for anything the template doesn't generate.
 
 ## After editing
 

@@ -3,7 +3,7 @@
 Before writing code, check:
 
 - `docs/adr/INDEX.md` — prior decisions (don't re-litigate)
-- `docs/plans/` — current implementation plan, if one exists
+- `docs/superpowers/plans/` — current implementation plan, if one exists
 
 ## Architecture Decision Records
 
@@ -12,12 +12,18 @@ When making significant decisions — choosing between libraries, patterns, tool
 ## Commands
 
 ```bash
-uv run autohooks activate --mode=pythonpath   # install pre-commit hook (once per clone)
-uv run git commit                             # always use instead of git commit (runs autohooks)
-uv sync --group=dev                           # sync deps after pulling
-uv run pytest                                 # bake the template and validate the output
-uv run mypy test                              # type check
-uv run ruff check test                        # lint
+# Install the pre-commit hook (once per clone)
+uv run autohooks activate --mode=pythonpath
+# Always use instead of git commit (runs autohooks)
+uv run git commit
+# Sync deps after pulling
+uv sync --group=dev
+# Bake the template and validate the output
+uv run pytest
+# Type check
+uv run mypy test
+# Lint
+uv run ruff check test
 ```
 
 `test` is named explicitly: `template/`'s Python files belong to the generated project, and are checked there by CI's bake.
@@ -25,9 +31,11 @@ uv run ruff check test                        # lint
 To bake your working tree into a real project, as CI does, then validate it from inside that project:
 
 ```bash
-uvx "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked
+rm -rf /tmp/baked && uvx "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked
 cd /tmp/baked && uv sync --group ci && uv run ruff check && uv run mypy src test && uv run pytest
 ```
+
+On git too old for copier 9.19 (e.g. 2.43, which lacks `checkout --end-of-options`), use `uvx "copier==9.18.2"` instead.
 
 Keep `--vcs-ref=HEAD`: without it copier bakes the newest release tag, not your change. With it, copier also folds in uncommitted edits.
 
@@ -58,9 +66,11 @@ This repo is a [copier](https://copier.readthedocs.io/) template, not a Python p
 - `template/` — the templated project content. Only the contents of files ending `.jinja` are rendered; every other file's contents copy verbatim, symlinks included. Path names are always rendered, suffix or not. Jinja delimiters are `[[ ]]`, `[% %]` and `[# #]`, so a templated `run:` block uses `[ ]` or `test`, never bash's `[[ ]]`. Inside a `.jinja` file, wrap a TOML array of tables (`[[tool.mypy.overrides]]`) or a literal `[#` in `[% raw %]…[% endraw %]`. The generated AGENTS.md is identical across projects; a project's own sections go in `.agents/rules/project.md`, which copier writes only on first copy (ADR 010). `project.md` may add to, narrow or override a templated rule, and wins where the two conflict; the generated AGENTS.md's pointer to `.agents/rules/` must say so.
 - `test/` — bakes the template with copier and asserts the output is well-formed (no leftover Jinja markers, valid `pyproject.toml`, etc.). This is this repo's only test suite; there's no source package of its own to unit-test.
 
+The skills and agent files under `template/` (its `.claude/`, `.agents/`, AGENTS.md and CLAUDE.md) serve generated projects and don't apply when working on this repo; this repo's own Python rotation steps are below.
+
 CI goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.
 
-To rotate the supported Python range in this repo, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, and the `generate` job's Python matrix in `ci.yml`.
+To rotate the supported Python range in this repo, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, the `generate` job's Python matrix in `ci.yml`, and `pyproject.toml`'s `[tool.black] target-version`.
 
 A template change reaches existing projects only once it's released: Renovate's copier manager then opens a PR in every project whose `.copier-answers.yml` records this template. See Releases.
 

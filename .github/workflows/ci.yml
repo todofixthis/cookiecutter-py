@@ -100,7 +100,6 @@ jobs:
           uv run make html
         working-directory: /tmp/baked/my-python-project/docs
 
-
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,
   # so this is the only check a commit made elsewhere meets (ADR 009 forbids a
   # repo-local copy of the tool). Renovate bumps the pinned release here, in

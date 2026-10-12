@@ -149,5 +149,5 @@ update.
 [ADR 004]: 004-validate-the-template-by-baking-it.md
 [copier]: https://copier.readthedocs.io/
 [cruft]: https://pypi.org/project/cruft/
-[drift audit]: ../superpowers/plans/2026-10-10-drift-audit.md
+[drift audit]: ../audits/2026-10-10-drift-audit.md
 [Renovate copier manager]: https://github.com/renovatebot/renovate/blob/main/lib/modules/manager/copier/readme.md

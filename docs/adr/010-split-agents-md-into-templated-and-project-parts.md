@@ -85,7 +85,7 @@ so a reader meeting both knows which to follow.
   for every library goes in the template's AGENTS.md or `testing.md`.
 - The template's `project.md` is a stub, so improving it later reaches only new
   projects.
-- A bake test proves `project.md` survives `copier update`, and that the test
-  fails without `_skip_if_exists`.
+- A bake test guards `project.md`'s survival of `copier update`; when written,
+  it was shown once to fail without `_skip_if_exists`.
 
 [ADR 008]: 008-propagate-template-changes-with-copier-and-renovate.md
