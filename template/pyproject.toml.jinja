@@ -64,6 +64,15 @@ pre-commit = [
     "docs_build",
 ]
 
+[tool.black]
+# Explicit, because black otherwise infers every version `requires-python`
+# allows, including ones newer than the running interpreter can parse.
+target-version = [
+    "py[[ python_major ]][[ python_minor ]]",
+    "py[[ python_major ]][[ python_minor | int - 1 ]]",
+    "py[[ python_major ]][[ python_minor | int - 2 ]]",
+]
+
 [tool.hatch.build.targets.sdist]
 include = [
     "src/[[ package_name ]]",

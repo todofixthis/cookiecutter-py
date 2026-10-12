@@ -22,4 +22,4 @@ copier prompts for each answer; all but the short description and copyright year
 
 ## Developing this template
 
-See `AGENTS.md` for the dev workflow (`uv sync --group=dev`, `uv run pytest` bakes the template and checks the output, `uv run mypy test`, `uv run ruff check test`).
+See `AGENTS.md` for the dev workflow, including how to bake your working tree into a project (`uv sync --group=dev`, `uv run pytest` bakes the template and checks the output, `uv run mypy test`, `uv run ruff check test`).

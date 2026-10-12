@@ -4,6 +4,8 @@ date: 2026-10-12
 scope:
   - copier.yml
   - test/
+  - template/AGENTS.md
+  - template/.agents/
 summary: The templated AGENTS.md is identical across libraries and holds no project-specific sections; each project's Architecture, Tests, Package and Troubleshooting content lives in `.agents/rules/project.md`, which copier writes only on first copy (`_skip_if_exists`), and shared test conventions live in the templated `.agents/rules/testing.md`.
 revisit-when: A harness the maintainer uses reads AGENTS.md but not `.agents/rules/`; copier stops honouring `_skip_if_exists` on update.
 ---
