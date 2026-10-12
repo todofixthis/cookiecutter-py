@@ -2,8 +2,7 @@
 status: Accepted
 date: 2026-10-12
 scope: [cookiecutter.json, hooks/, test/, .github/workflows/]
-summary: Generate and update projects with copier, not cookiecutter, cruft or manual re-sync, using no copier unsafe features so Renovate's copier manager delivers each template release as a PR; projects support the three most recent Python minor releases through a recorded `python_version` answer, not one computed from the host interpreter, and the template is validated by baking a project and running its own lint, type-check, test and docs build. CI bakes under every supported
-Python version.
+summary: Generate and update projects with copier, not cookiecutter, cruft or manual re-sync, using no copier unsafe features so Renovate's copier manager delivers each template release as a PR; projects support the three most recent Python minor releases through a recorded `python_version` answer, not one computed from the host interpreter, and the template is validated by baking a project and running its own lint, type-check, test and docs build.
 revisit-when: Renovate's copier manager stops opening PRs for template releases; a library needs a template feature copier treats as unsafe.
 ---
 
@@ -112,7 +111,8 @@ depends on:
 
 This restates ADR 004 with copier in place of cookiecutter: `test/` bakes the
 template with copier and checks the output, and CI bakes a project and runs its
-own lint, type-check, test and docs build.
+own lint, type-check, test and docs build. CI bakes the template under every
+supported Python version.
 
 It restates ADR 001's policy, three most recent minor releases, with a different
 mechanism. `python_version` becomes a recorded question with a static default,
