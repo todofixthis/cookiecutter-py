@@ -2,7 +2,8 @@
 status: Accepted
 date: 2026-10-12
 scope: [cookiecutter.json, hooks/, test/, .github/workflows/]
-summary: Generate and update projects with copier, not cookiecutter, cruft or manual re-sync, using no copier unsafe features so Renovate's copier manager delivers each template release as a PR; the Python floor is a recorded `python_version` answer, not computed from the host interpreter.
+summary: Generate and update projects with copier, not cookiecutter, cruft or manual re-sync, using no copier unsafe features so Renovate's copier manager delivers each template release as a PR; projects support the three most recent Python minor releases through a recorded `python_version` answer, not one computed from the host interpreter, and the template is validated by baking a project and running its own lint, type-check, test and docs build. CI bakes under every supported
+Python version.
 revisit-when: Renovate's copier manager stops opening PRs for template releases; a library needs a template feature copier treats as unsafe.
 ---
 
@@ -98,8 +99,11 @@ depends on:
   `${{ }}` then needs no `{% raw %}`, so templated workflows stay readable to
   Renovate's other managers. Bash in a templated `run:` block uses `[ ]` or
   `test`, never `[[ ]]`, which copier would read as a variable.
-- **Templated files carry `.jinja`** (`_templates_suffix: .jinja`); every other
-  file copies verbatim.
+- **Templated files carry `.jinja`** (`_templates_suffix: .jinja`): only those
+  files' contents are rendered, and every other file's contents copy verbatim.
+  Path names are always rendered, suffix or not.
+- **A value that must stay fixed after the first copy is a recorded question,
+  never a computed variable**; computed values re-render on every update.
 - **Symlinks are preserved** (`_preserve_symlinks: true`), replacing
   `hooks/post_gen_project.py`.
 - **Releases are bare semver tags** (`1.0.0`), matching phx-claude-siat's.
@@ -115,7 +119,10 @@ mechanism. `python_version` becomes a recorded question with a static default,
 which the `rotate-python-versions` skill bumps when a Python version rotates. A
 value computed from the host interpreter would need an unsafe extension, and
 would be re-derived on every `copier update`, moving a project's Python floor
-unasked whenever Renovate's runner had a different Python.
+unasked whenever Renovate's runner had a different Python. For the same reason
+`this_year` gives way to a recorded `copyright_year`, alongside a recorded
+`copyright_holder`, so a project's copyright notice doesn't change with each
+update.
 
 ## Consequences
 

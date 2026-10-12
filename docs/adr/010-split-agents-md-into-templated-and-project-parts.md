@@ -68,6 +68,10 @@ local ones survive: Option 3 gives up the former, Option 1 the latter.
 luck, and a pointer in AGENTS.md keeps project rules reachable from harnesses
 that don't load `.agents/rules/`.
 
+`.agents/rules/project.md` may add to, narrow or override a templated rule, and
+wins where the two conflict. AGENTS.md's pointer to `.agents/rules/` says so,
+so a reader meeting both knows which to follow.
+
 ## Consequences
 
 - Adopting a library moves every local AGENTS.md section into

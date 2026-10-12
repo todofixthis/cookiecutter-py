@@ -72,7 +72,8 @@ retroactively.
 ## Decision
 
 Option 2, per the maintainer's direction. Paddock, not the five
-static-version packages, is the template's reference going forward.
+static-version packages, is the template's reference going forward. Widened on
+2026-10-10 to every library; see Consequences.
 
 ## Consequences
 

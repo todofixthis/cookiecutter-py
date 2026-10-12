@@ -43,8 +43,9 @@ CI runs the pinned one.
 No `adrs` job in the template; each library keeps its own mechanism.
 
 **Pros:** No change.
-**Cons:** A faulty ADR from outside Claude Code lands unchecked. Five
-mechanisms, now including none, for one need.
+**Cons:** A faulty ADR from outside Claude Code lands unchecked. Four
+mechanisms for one need, plus a fifth state, no mechanism at all, in the
+template itself.
 **Risks:** The pin drifts per repository, so the same corpus passes in one and
 fails in another.
 
@@ -52,10 +53,10 @@ fails in another.
 
 The `adrs` job runs `phx-adr check` from phx-claude-siat at a release's
 40-character commit SHA, with the version as a trailing `# X.Y.Z` on the same
-line. A Renovate regex manager with the `github-tags` datasource matches every
-pin in `.github/workflows/build.yml` and AGENTS.md, and AGENTS.md's skill link
-in tag form (`blob/X.Y.Z/`), and bumps them all in one PR. This is
-filters-pydantic's form.
+line. In a generated project, a Renovate regex manager with the `github-tags`
+datasource matches every pin in `.github/workflows/build.yml` and AGENTS.md,
+and AGENTS.md's skill link in tag form (`blob/X.Y.Z/`), and bumps them all in
+one PR. This is filters-pydantic's form.
 
 **Cons:** The trailing comment breaks the rule that comments go on the line
 before the code. A pin that loses its comment, or has it moved, silently stops
@@ -95,19 +96,25 @@ The `gate` job is the second half of the decision. It `needs` every other job,
 runs with `if: always()`, and fails if any of them reports `failure`,
 `cancelled` or `skipped`. Without `if: always()`, a failed dependency skips the
 gate, and GitHub counts a skipped required check as passing. `skipped` is
-included because no job in the template is skipped by design, so a skip means
-a dependency failed. The rejected alternative, listing every job as a required
+included because no job in the generated workflow is skipped by design, so a
+skip means a dependency failed. The rejected alternative, listing every job as a required
 check in the module, needs a per-repository list in shared Terraform, and
 matrix job names such as `test (3.12)` change with every Python rotation.
 
-CI job names are `test`, `type-check`, `docs`, `adrs` and `gate`.
+A generated project's CI job names are `test`, `type-check`, `docs`, `adrs`
+and `gate`. The template repository's own CI is one workflow, `ci.yml`, with
+jobs `test`, `type-check`, `generate`, `adrs` and `gate`, and its Renovate
+manager also covers `template/AGENTS.md.jinja` and
+`template/.github/workflows/*.jinja`.
 
 ## Consequences
 
 - Every job added to a workflow must be added to `gate`'s `needs`, or it stops
   blocking merges.
-- A job that is skipped on purpose (a path filter, say) can't sit in `gate`'s
-  `needs` as it stands; it needs its own condition in the gate step.
+- A job that is skipped on purpose (a path filter, say) still goes in
+  `gate`'s `needs`. The fail step then tests each job's
+  `needs.<job>.result` individually, tolerating `skipped` for that job alone,
+  rather than `contains(needs.*.result, 'skipped')`.
 - AGENTS.md documents the trailing-comment exception beside the pinned
   commands, so an agent tidying comments doesn't move it.
 - Renovate's phx-adr PR is where a new release's stricter checks surface; fix

@@ -26,8 +26,6 @@ uv run ruff check hooks test                  # lint
 
 The phx plugin's ADR tool, for use where the skill isn't available. Renovate bumps these pins and the `adrs` CI job's together, matching each on its trailing `# X.Y.Z` comment (ADR 009) — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.
 
-If CI reports a stale index the session's own tool can't reproduce, the installed plugin (which tracks phx-claude-siat's `main`) and the pinned release differ. Compare the two versions: if the installed one is newer, merge Renovate's pending bump, or bump by hand: each pin to the release's commit, and its comment and the skill link above to the release's version. The commit is the `refs/tags/<version>^{}` line of `git ls-remote --tags https://github.com/todofixthis/phx-claude-siat`, not the tag object above it. Otherwise update the plugin.
-
 ```bash
 # Scaffold the next ADR
 uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 8.1.0
@@ -41,12 +39,14 @@ uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a2
 uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr check # 8.1.0
 ```
 
+If CI reports a stale index the session's own tool can't reproduce, the installed plugin (which tracks phx-claude-siat's `main`) and the pinned release differ. Compare the two versions: if the installed one is newer, merge Renovate's pending bump, or bump by hand: each pin to the release's commit, and its comment and the skill link above to the release's version. The commit is the `refs/tags/<version>^{}` line of `git ls-remote --tags https://github.com/todofixthis/phx-claude-siat`, not the tag object above it. Otherwise update the plugin.
+
 ## Architecture
 
 This repo is a [copier](https://copier.readthedocs.io/) template, not a Python package in its own right (ADR 008):
 
-- `copier.yml` — the questions a user answers, and the template's settings. Every question needs a default except those with no possible one, since Renovate updates projects with `copier update --defaults`. Use no copier unsafe features (`_tasks`, `_migrations`, `_jinja_extensions`): Renovate runs without `--trust`.
-- `template/` — the templated project content. Only files ending `.jinja` are rendered; everything else copies verbatim, symlinks included. Jinja delimiters are `[[ ]]`, `[% %]` and `[# #]`, so a templated `run:` block uses `[ ]` or `test`, never bash's `[[ ]]`. The generated AGENTS.md is identical across projects; a project's own sections go in `.agents/rules/project.md`, which copier writes only on first copy (ADR 010).
+- `copier.yml` — the questions a user answers, and the template's settings. Every question needs a default except those with no possible one, since Renovate updates projects with `copier update --defaults`. Use no copier unsafe features (`_tasks`, `_migrations`, `_jinja_extensions`): Renovate runs without `--trust`. A value that must stay fixed after the first copy is a recorded question, never a computed variable; computed values re-render on every update (so `copyright_year` and `copyright_holder` are recorded, where cookiecutter's `this_year` was computed).
+- `template/` — the templated project content. Only the contents of files ending `.jinja` are rendered; every other file's contents copy verbatim, symlinks included. Path names are always rendered, suffix or not. Jinja delimiters are `[[ ]]`, `[% %]` and `[# #]`, so a templated `run:` block uses `[ ]` or `test`, never bash's `[[ ]]`. The generated AGENTS.md is identical across projects; a project's own sections go in `.agents/rules/project.md`, which copier writes only on first copy (ADR 010). `project.md` may add to, narrow or override a templated rule, and wins where the two conflict; the generated AGENTS.md's pointer to `.agents/rules/` must say so.
 - `test/` — bakes the template with copier and asserts the output is well-formed (no leftover Jinja markers, valid `pyproject.toml`, etc.). This is this repo's only test suite; there's no source package of its own to unit-test.
 
 CI goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.
@@ -87,7 +87,7 @@ Place comments on the line preceding the code they document, not as trailing com
 ## Releases
 
 1. Merge `develop` into `main` via PR.
-2. Tag the merge commit on `main` as `X.Y.Z` (bare semver, no `v` prefix).
+2. The maintainer tags the merge commit on `main` as `X.Y.Z` (bare semver, no `v` prefix). Agents don't tag; ask the maintainer.
 
 Renovate does the rest: it opens a PR updating each generated project to the new tag.
 
