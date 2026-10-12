@@ -8,9 +8,14 @@ description: Use when preparing or publishing a new release of {{ cookiecutter.p
 
 ### 1. Gather changes since last release
 ```bash
-gh release list --limit 1 --json tagName --jq '.[0].tagName'   # find last release tag
-git log <last-tag>..HEAD --oneline                              # all commits since
+# Latest release (prints nothing if there is none)
+gh api 'repos/{owner}/{repo}/releases?per_page=100' --jq '[.[] | select(.draft | not)][0].tag_name // empty'
+# Latest release without GitHub's pre-release flag (prints nothing if there is none)
+gh api 'repos/{owner}/{repo}/releases?per_page=100' --jq '[.[] | select((.draft or .prerelease) | not)][0].tag_name // empty'
+# All commits since <last-tag>
+git log <last-tag>..HEAD --oneline
 ```
+`<last-tag>` is the first tag printed. The exception is a version without a pre-release segment (`4.0.0`, not `4.0.0a2`) following one or more with: where the two tags differ, it takes the second, so its notes cover the whole pre-release cycle for readers who skipped it. Ask the developer which version they're aiming for if they haven't said. Where the tag you need prints nothing, nothing earlier has shipped: drop `<last-tag>..` from every range below and gather the whole history.
 
 ### 2. Look up PR and issue context
 For every merge commit, extract the PR number and fetch its description:
@@ -32,6 +37,8 @@ Based on the changes, recommend a semver bump:
 - **major** — breaking changes
 - **minor** — new features or behaviour changes, fully backwards-compatible
 - **patch** — bug fixes only
+
+Where the latest release and the next version share a pre-release cycle, bump only the pre-release segment (`4.0.0a2` → `4.0.0a3`) unless the developer says otherwise.
 
 ### 5. Gate: breaking changes require a migration guide
 A **breaking change** is anything that makes previously-working code fail — at runtime, or under a type checker. Undocumented behaviour someone relied on still counts; "only a couple of users" measures blast radius, not compatibility. If this release has none, skip to the stop below.
@@ -56,7 +63,7 @@ uv run make -C docs clean && uv run make -C docs html    # builds, and it isn't 
 ```
 Then read the guide and confirm it covers this release's break. No command checks that for you.
 
-**Stop here. Get explicit confirmation of the release notes and version number before continuing.**
+**Stop here. Get explicit confirmation of the release notes and version number before continuing.** Once the version is confirmed, add or drop the `[!CAUTION]` block to match it (see _Writing Release Notes_).
 
 ---
 
@@ -132,6 +139,7 @@ gh release create <version> dist/* \
   --title "{{ cookiecutter.project_name }} v<version>" \
   --notes-file release-<version>-body.md
 ```
+For a version with a pre-release segment (`4.0.0a2`), add `--prerelease`, so GitHub labels it and leaves `Latest` on the last release without one. A `0.y.z` version without a segment carries the `[!CAUTION]` alert but not this flag.
 `dist/*` picks up the `.whl`, `.tar.gz`, and `.sig` files.
 
 ### 12. Upload to PyPI
@@ -183,6 +191,11 @@ Because `develop` now contains all of `main`'s commits, the histories no longer 
 ### Structure
 ```markdown
 # {{ cookiecutter.project_name }} v<version>
+
+> [!CAUTION]
+> **Alpha software — here be dragons**
+> This is an early release. APIs, configuration formats, and CLI flags may change without notice in future versions. Bugs and crashes are possible.
+
 <one-sentence summary of the release character>
 
 > [!WARNING]
@@ -208,7 +221,7 @@ Because `develop` now contains all of `main`'s commits, the histories no longer 
 # SHA256 Checksums
 ```
 
-Only include the `[!WARNING]` block if there are breaking changes — but when it is present, the migration guide link is **required**, not optional. Omit any section that has no entries.
+Lead every pre-release's notes with the `[!CAUTION]` block, verbatim, directly under the title: a pre-release is any `0.y.z` version, or one with a pre-release segment (`4.0.0a1`, `2.0.0rc1`, `1.1.0.dev1`). Omit it from every other release. Only include the `[!WARNING]` block if there are breaking changes — but when it is present, the migration guide link is **required**, not optional. Omit any section that has no entries.
 
 ### Grouping related items
 - **2–4 related bullets:** nest as a hierarchical sublist under the parent bullet

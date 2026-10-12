@@ -30,7 +30,7 @@ This repo is a [cookiecutter](https://cookiecutter.readthedocs.io/) template, no
 
 - `cookiecutter.json` / `hooks/pre_prompt.py` — the prompts a user answers, plus a pre-prompt hook that fills in `python_version` (from the host interpreter) and `this_year` before prompting starts.
 - `{{ cookiecutter.github_project_name }}/` — the templated project content. Everything a generated project ships (its own `pyproject.toml`, CI, docs, agent infra) lives here, separate from this repo's own dev tooling below.
-- `test/` — bakes the template with default answers and asserts the output is well-formed (no leftover Jinja markers, valid `pyproject.toml`, etc.). This is this repo's only test suite; there's no source package of its own to unit-test.
+- `test/` — bakes the template with default answers and asserts the output is well-formed (no leftover Jinja markers, valid `pyproject.toml`, etc.). This is this repo's only test suite; there's no source package of its own to unit-test. It bakes from the git-tracked files as they stand on disk, so `git add` a new template file (and rename with `git mv`) before running it, or the bake silently leaves it out. If the template itself isn't a git checkout, every bake test errors with `git ls-files` exiting 128.
 
 The `.github/workflows/generate-and-validate.yml` workflow goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.
 
