@@ -248,3 +248,23 @@ def test_renovate_manages_adr_pin(baked_project: Path) -> None:
         "/^\\.github/workflows/build\\.yml$/",
         "/^AGENTS\\.md$/",
     ]
+
+
+def read_release_skill(project: Path) -> str:
+    """Return the baked release skill's text."""
+    path = project / ".agents" / "skills" / "release" / "SKILL.md"
+    return path.read_text(encoding="utf-8")
+
+
+def test_release_skill_writes_notes_file(baked_project: Path) -> None:
+    """The release skill writes release-<version>.md before first reading it."""
+    skill = read_release_skill(baked_project)
+    notes_file = "release-<version>.md"
+    assert notes_file in skill
+    assert skill.index(f"write them to `{notes_file}`") < skill.index("--body-file")
+
+
+def test_release_skill_single_checksums_heading(baked_project: Path) -> None:
+    """The release skill does not append a second checksums heading."""
+    skill = read_release_skill(baked_project)
+    assert 'echo -e "\\n# SHA256 Checksums"' not in skill
