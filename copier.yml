@@ -1,6 +1,10 @@
 _subdirectory: template
 _templates_suffix: .jinja
 _preserve_symlinks: true
+# Written on first copy, then the project's own: `copier update` never touches
+# it, so local rules survive template releases (ADR 010).
+_skip_if_exists:
+  - .agents/rules/project.md
 _envops:
   block_start_string: "[%"
   block_end_string: "%]"
