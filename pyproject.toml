@@ -17,6 +17,8 @@ dev = [
     "copier>=9,<10",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "pyyaml>=6.0.3,<7.0.0",
+    "types-pyyaml>=6.0.12.20260906,<7.0.0.0",
 ]
 ci = [
     # copier >=9.19 runs `git checkout --end-of-options`, which git 2.43
@@ -25,6 +27,7 @@ ci = [
     "copier>=9,<10",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "pyyaml>=6.0.3,<7.0.0",
 ]
 
 [tool.uv]

@@ -6,9 +6,11 @@ import subprocess
 import tomllib
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import copier
 import pytest
+import yaml
 
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
 
@@ -188,3 +190,61 @@ def test_project_rules_survive_update(template_repo: Path, tmp_path: Path) -> No
     # Read line by line rather than with PyYAML, which ships no type stubs.
     answers = (dst / ".copier-answers.yml").read_text(encoding="utf-8").splitlines()
     assert "_commit: 0.0.2" in answers
+
+
+def load_ci_jobs(project: Path) -> dict[str, dict[str, Any]]:
+    """Parses the baked ``build.yml`` and returns its jobs by name."""
+    workflow = yaml.safe_load(
+        (project / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+    )
+    jobs: dict[str, dict[str, Any]] = workflow["jobs"]
+    return jobs
+
+
+def test_ci_job_names(baked_project: Path) -> None:
+    """CI runs exactly the jobs the template documents."""
+    assert set(load_ci_jobs(baked_project)) == {
+        "test",
+        "type-check",
+        "docs",
+        "adrs",
+        "gate",
+    }
+
+
+def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
+    """The ``gate`` job aggregates every other job and fails on a non-success."""
+    jobs = load_ci_jobs(baked_project)
+    gate = jobs["gate"]
+    assert set(gate["needs"]) == set(jobs) - {"gate"}
+    assert gate["if"] == "always()"
+    fail_conditions = [step.get("if", "") for step in gate["steps"]]
+    assert any(
+        all(result in condition for result in ("failure", "cancelled", "skipped"))
+        for condition in fail_conditions
+    )
+
+
+def test_adr_pin_is_sha_with_version(baked_project: Path) -> None:
+    """The ``adrs`` job pins a commit SHA with a trailing version comment."""
+    # Read as text: `yaml.safe_load` strips the trailing comment, which
+    # Renovate matches on.
+    text = (baked_project / ".github" / "workflows" / "build.yml").read_text(
+        encoding="utf-8"
+    )
+    assert re.search(
+        r"phx-claude-siat@[0-9a-f]{40}#subdirectory=skills/writing-adrs'"
+        r" phx-adr check # \d+\.\d+\.\d+",
+        text,
+    )
+
+
+def test_renovate_manages_adr_pin(baked_project: Path) -> None:
+    """Renovate bumps the phx-adr pin in CI and AGENTS.md together."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    manager = config["customManagers"][0]
+    assert manager["datasourceTemplate"] == "github-tags"
+    assert manager["managerFilePatterns"] == [
+        "/^\\.github/workflows/build\\.yml$/",
+        "/^AGENTS\\.md$/",
+    ]
