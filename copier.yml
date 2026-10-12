@@ -1,0 +1,77 @@
+_subdirectory: template
+_templates_suffix: .jinja
+_preserve_symlinks: true
+_envops:
+  block_start_string: "[%"
+  block_end_string: "%]"
+  variable_start_string: "[["
+  variable_end_string: "]]"
+  comment_start_string: "[#"
+  comment_end_string: "#]"
+
+project_name:
+  type: str
+  default: My Python Project
+
+github_project_name:
+  type: str
+  default: "[[ project_name.lower().replace(' ', '-') ]]"
+
+package_name:
+  type: str
+  default: "[[ project_name.lower().replace(' ', '_') ]]"
+
+pypi_project_name:
+  type: str
+  default: "phx-[[ github_project_name ]]"
+
+project_short_description:
+  type: str
+
+author_name:
+  type: str
+  default: Phoenix Zerin
+
+author_email:
+  type: str
+  default: phx@phx.nz
+
+github_username:
+  type: str
+  default: todofixthis
+
+# Recorded rather than computed from today's date, so a project's copyright
+# notice doesn't move on every `copier update` (ADR 008).
+copyright_year:
+  type: int
+  validator: "[% if copyright_year < 1000 or copyright_year > 9999 %]Must be a 4-digit year[% endif %]"
+
+copyright_holder:
+  type: str
+  default: "[[ author_name ]]"
+
+# The newest supported Python release; the template supports it and the two
+# before it (ADR 001, restated by ADR 008). Recorded rather than read from the
+# host interpreter, so `copier update` never moves a project's Python floor.
+python_version:
+  type: str
+  default: "3.14"
+  # A block scalar, so YAML leaves the backslashes alone and Jinja's string
+  # literal unescapes `\\.` to the regex's `\.`.
+  validator: >-
+    [% if not (python_version | regex_search('^3\\.\\d+$')) %]Must look like 3.N[% endif %]
+
+python_major:
+  type: str
+  default: "[[ python_version.split('.')[0] ]]"
+  when: false
+
+python_minor:
+  type: str
+  default: "[[ python_version.split('.')[1] ]]"
+  when: false
+
+# Seeds `__version__`; without it hatchling's dynamic version renders empty.
+version:
+  type: str
+  default: 0.1.0

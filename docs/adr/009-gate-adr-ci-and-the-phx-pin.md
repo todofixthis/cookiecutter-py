@@ -1,7 +1,10 @@
 ---
 status: Accepted
 date: 2026-10-12
-scope: [.github/workflows/, AGENTS.md, renovate.json]
+scope:
+  - .github/workflows/
+  - AGENTS.md
+  - renovate.json
 summary: CI runs an `adrs` job pinned to a phx-claude-siat release commit with a trailing `# X.Y.Z`, bumped with AGENTS.md by a Renovate `github-tags` regex manager, not hand-kept or tracking `main`; a single `gate` job aggregating every other job is the only required check.
 revisit-when: The phx plugin drops its `phx-adr` entry point; todofixthis/terraform-github-repository stops requiring a check named `gate`.
 ---

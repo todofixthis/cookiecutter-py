@@ -1,7 +1,10 @@
 ---
 status: Accepted
 date: 2026-09-03
-scope: ["{{ cookiecutter.github_project_name }}/pyproject.toml", "{{ cookiecutter.github_project_name }}/src/{{ cookiecutter.package_name }}/__init__.py", "{{ cookiecutter.github_project_name }}/.agents/skills/release/SKILL.md"]
+scope:
+  - template/pyproject.toml.jinja
+  - template/src/
+  - template/.agents/skills/release/SKILL.md.jinja
 summary: Dynamic versioning is the standard every library adopts with the template, static-version siblings included; projects source their version from `__init__.py` via `[tool.hatch.version]` instead of a static `pyproject.toml` field, matching paddock, with `[tool.uv] keyring-provider = "subprocess"` added alongside it to close a gap the other siblings had already closed.
 revisit-when: a future decision standardises every sibling project, paddock included, on one versioning convention that isn't paddock's dynamic one.
 ---

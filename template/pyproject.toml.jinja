@@ -3,11 +3,11 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "{{ cookiecutter.pypi_project_name }}"
+name = "[[ pypi_project_name ]]"
 dynamic = ["version"]
-description = "{{ cookiecutter.project_short_description }}"
-authors = [{ name = "{{ cookiecutter.author_name }}", email = "{{ cookiecutter.author_email }}" }]
-requires-python = ">={{ cookiecutter.__python_major }}.{{ cookiecutter.__python_minor | int - 2 }}"
+description = "[[ project_short_description ]]"
+authors = [{ name = "[[ author_name ]]", email = "[[ author_email ]]" }]
+requires-python = ">=[[ python_major ]].[[ python_minor | int - 2 ]]"
 readme = "README.rst"
 license = "MIT"
 
@@ -18,10 +18,10 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}"
-Documentation = "https://{{ cookiecutter.pypi_project_name }}.readthedocs.io/"
-Changelog = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}/releases"
-Issues = "https://github.com/{{ cookiecutter.github_username }}/{{ cookiecutter.github_project_name }}/issues"
+Repository = "https://github.com/[[ github_username ]]/[[ github_project_name ]]"
+Documentation = "https://[[ pypi_project_name ]].readthedocs.io/"
+Changelog = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/releases"
+Issues = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/issues"
 
 [dependency-groups]
 # I'm only one person, so to keep from getting overwhelmed, I'm only committing
@@ -66,7 +66,7 @@ pre-commit = [
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "src/{{ cookiecutter.package_name }}",
+    "src/[[ package_name ]]",
     "LICENCE.txt",
     "docs",
     "test",
@@ -74,14 +74,14 @@ include = [
 exclude = ["docs/_build"]
 
 [tool.hatch.build.targets.wheel]
-include = ["src/{{ cookiecutter.package_name }}"]
+include = ["src/[[ package_name ]]"]
 exclude = ["docs/_build"]
 
 [tool.hatch.build.targets.wheel.sources]
-"src/{{ cookiecutter.package_name }}" = "{{ cookiecutter.package_name }}"
+"src/[[ package_name ]]" = "[[ package_name ]]"
 
 [tool.hatch.version]
-path = "src/{{ cookiecutter.package_name }}/__init__.py"
+path = "src/[[ package_name ]]/__init__.py"
 
 [tool.mypy]
 strict = true
@@ -91,9 +91,9 @@ testpaths = ["test"]
 
 [tool.tox]
 env_list = [
-    "py{{ cookiecutter.__python_major }}{{ cookiecutter.__python_minor }}",
-    "py{{ cookiecutter.__python_major }}{{ cookiecutter.__python_minor | int - 1 }}",
-    "py{{ cookiecutter.__python_major }}{{ cookiecutter.__python_minor | int - 2 }}",
+    "py[[ python_major ]][[ python_minor ]]",
+    "py[[ python_major ]][[ python_minor | int - 1 ]]",
+    "py[[ python_major ]][[ python_minor | int - 2 ]]",
 ]
 
 [tool.tox.env_run_base]

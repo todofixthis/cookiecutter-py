@@ -1,7 +1,10 @@
 ---
 status: Accepted
 date: 2026-08-29
-scope: ["{{ cookiecutter.github_project_name }}/pyproject.toml", "{{ cookiecutter.github_project_name }}/.github/workflows/build.yml", "{{ cookiecutter.github_project_name }}/.readthedocs.yaml"]
+scope:
+  - template/pyproject.toml.jinja
+  - template/.github/workflows/build.yml.jinja
+  - template/.readthedocs.yaml
 summary: Generate projects using uv + hatchling instead of Poetry, matching what class-registry and phx-claude-siat have both since moved to.
 ---
 

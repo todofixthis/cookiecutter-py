@@ -16,11 +16,11 @@ uv run autohooks activate --mode=pythonpath   # install pre-commit hook (once pe
 uv run git commit                             # always use instead of git commit (runs autohooks)
 uv sync --group=dev                           # sync deps after pulling
 uv run pytest                                 # bake the template and validate the output
-uv run mypy hooks test                        # type check
-uv run ruff check hooks test                  # lint
+uv run mypy test                              # type check
+uv run ruff check test                        # lint
 ```
 
-`hooks`/`test` are named explicitly — a bare `ruff check` walks the whole repo and trips over `{{ cookiecutter.github_project_name }}/pyproject.toml`'s unrendered Jinja (it isn't a real project; `[tool.ruff] extend-exclude` alone doesn't stop ruff's directory walk from touching it).
+`test` is named explicitly: `template/`'s Python files belong to the generated project, and are checked there by CI's bake.
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
