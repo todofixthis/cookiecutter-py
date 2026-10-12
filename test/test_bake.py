@@ -99,3 +99,22 @@ def test_claude_skills_stays_a_symlink(baked_project: Path) -> None:
     claude_skills = baked_project / ".claude" / "skills"
     assert claude_skills.is_symlink()
     assert claude_skills.readlink() == Path("..") / ".agents" / "skills"
+
+
+def test_readthedocs_syncs_into_rtd_env(baked_project: Path) -> None:
+    """ReadTheDocs syncs into its own virtualenv via UV_PROJECT_ENVIRONMENT."""
+    config = (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
+    assert "UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH" in config
+    assert "VIRTUAL_ENV=$READTHEDOCS" not in config
+
+
+def test_rotate_skill_searches_hidden_dirs(baked_project: Path) -> None:
+    """Every rg command in the rotate skill passes --hidden to reach .github."""
+    skill = baked_project / ".agents" / "skills" / "rotate-python-versions" / "SKILL.md"
+    rg_lines = [
+        line
+        for line in skill.read_text(encoding="utf-8").splitlines()
+        if line.lstrip().startswith("rg ")
+    ]
+    assert rg_lines
+    assert all("--hidden" in line for line in rg_lines), rg_lines
