@@ -26,7 +26,7 @@
 - **Symlinks are preserved** (`_preserve_symlinks: true`): `CLAUDE.md` → `AGENTS.md`, `.claude/skills` → `../.agents/skills`, `.claude/rules` → `../.agents/rules`.
 - **Template release tags** are bare semver (`1.0.0`), matching phx-claude-siat's tags.
 - **The phx-adr pin** is the 40-character commit SHA of a phx-claude-siat release, with a trailing `# X.Y.Z`. Renovate bumps it with a `github-tags` regex manager over `.github/workflows/build.yml` and `AGENTS.md` (filters-pydantic's form). The current value is `0725567cec6bab6a227c2a3d569e64c226c33a4e # 8.1.0`.
-- **The required check** is named `gate`. It aggregates every other job with `needs`, `if: always()`, and fails on any `failure` or `cancelled`.
+- **The required check** is named `gate`. It aggregates every other job with `needs`, `if: always()`, and fails on any `failure`, `cancelled` or `skipped` (ADR 009).
 - **CI job names:** `test`, `type-check`, `docs`, `adrs`, `gate`.
 - **Worktrees** live in `.claude/worktrees/`. That path is gitignored, and AGENTS.md tells agents to use the `using-git-worktrees` skill.
 - **The superpowers marketplace key** is `superpowers-marketplace` (plugin ID `superpowers@superpowers-marketplace`), matching `todofixthis/config-claude/settings.json`.
