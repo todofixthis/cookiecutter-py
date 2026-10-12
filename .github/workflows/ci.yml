@@ -66,73 +66,45 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Bake a project with default answers
-        # --python runs copier under the matrix leg's interpreter, and the
-        # python_version answer bakes a project whose newest supported Python
-        # is that leg's, so each leg validates a different floor.
-        run: uvx --python "${{ matrix.python-version }}" "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x --data python_version="${{ matrix.python-version }}" . /tmp/baked/my-python-project
+        # --python runs copier under the matrix leg's interpreter. The
+        # python_version answer keeps its default, so every leg bakes the
+        # project the template ships.
+        run: uvx --python "${{ matrix.python-version }}" "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked/my-python-project
+      # UV_PYTHON runs the generated project's environment, and so every step
+      # below, under the matrix leg's interpreter.
       - name: Install the generated project's dependencies
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
         run: uv sync --group ci
         working-directory: /tmp/baked/my-python-project
       - name: Lint the generated project
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
         run: uv run ruff check
         working-directory: /tmp/baked/my-python-project
       - name: Type-check the generated project
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
         run: uv run mypy src test
         working-directory: /tmp/baked/my-python-project
       - name: Test the generated project
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
         run: uv run pytest
         working-directory: /tmp/baked/my-python-project
       - name: Build the generated project's docs
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
         run: |
           mkdir -p _static
           uv run make html
         working-directory: /tmp/baked/my-python-project/docs
 
+
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,
   # so this is the only check a commit made elsewhere meets (ADR 009 forbids a
   # repo-local copy of the tool). Renovate bumps the pinned release here, in
-  # A  generate:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          # Note: Use quotes to avoid float cast - especially important if the
-          # version number ends with 0!
-          - "3.12"
-          - "3.13"
-          - "3.14"
-
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Install uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Bake a project with default answers
-        # --python runs copier under the matrix leg's interpreter, and the
-        # python_version answer bakes a project whose newest supported Python
-        # is that leg's, so each leg validates a different floor.
-        run: uvx --python "${{ matrix.python-version }}" "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x --data python_version="${{ matrix.python-version }}" . /tmp/baked/my-python-project
-      - name: Install the generated project's dependencies
-        run: uv sync --group ci
-        working-directory: /tmp/baked/my-python-project
-      - name: Lint the generated project
-        run: uv run ruff check
-        working-directory: /tmp/baked/my-python-project
-      - name: Type-check the generated project
-        run: uv run mypy src test
-        working-directory: /tmp/baked/my-python-project
-      - name: Test the generated project
-        run: uv run pytest
-        working-directory: /tmp/baked/my-python-project
-      - name: Build the generated project's docs
-        run: |
-          mkdir -p _static
-          uv run make html
-        working-directory: /tmp/baked/my-python-project/docsTS.md and in the template together; keep the trailing version comment
+  # AGENTS.md and in the template together; keep the trailing version comment
   # it matches on.
   adrs:
     runs-on: ubuntu-latest
