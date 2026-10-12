@@ -4,9 +4,9 @@ Before writing code, check:
 
 - `docs/adr/INDEX.md` — prior decisions (don't re-litigate)
 - `docs/superpowers/plans/` — current implementation plan, if one exists
-- `.agents/rules/` — further rules, some scoped to particular paths. `project.md` there holds this project's own conventions; it may add to, narrow or override a rule in this file, and wins where the two conflict
+- `.agents/rules/` — further rules, some scoped to particular paths. `project.md` there holds this project's own conventions; it may add to, narrow or override a rule in this file or another file in `.agents/rules/`, and wins where the two conflict
 
-This file comes from a copier template and is overwritten by template updates, so put a project-specific rule in `.agents/rules/project.md`, never here.
+This file and every file in `.agents/rules/` except `project.md` come from a copier template and are overwritten by template updates. To add or change a rule for this project, including a different testing convention, edit `.agents/rules/project.md`, never one of the templated files.
 
 ## Architecture Decision Records
 
@@ -17,14 +17,22 @@ If you find yourself about to establish a new cross-cutting pattern (something t
 ## Commands
 
 ```bash
-uv run autohooks activate --mode=pythonpath   # install pre-commit hook (once per clone)
-uv run git commit                             # always use instead of git commit (runs autohooks)
-uv sync --group=dev                           # sync deps after pulling
-uv run pytest                                 # run tests (current Python)
-uv run tox -p                                 # run tests (all supported versions)
-uv run mypy src test                          # type check
-uv run ruff check                             # lint
-uv run make -C docs clean && uv run make -C docs html  # build docs
+# Install the pre-commit hook (once per clone)
+uv run autohooks activate --mode=pythonpath
+# Always use instead of git commit (runs autohooks)
+uv run git commit
+# Sync deps after pulling
+uv sync --group=dev
+# Run tests (current Python)
+uv run pytest
+# Run tests (all supported versions)
+uv run tox -p
+# Type check
+uv run mypy src test
+# Lint
+uv run ruff check
+# Build docs
+uv run make -C docs clean && uv run make -C docs html
 ```
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.

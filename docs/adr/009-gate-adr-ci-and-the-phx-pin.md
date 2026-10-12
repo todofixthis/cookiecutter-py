@@ -110,7 +110,7 @@ matrix job names such as `test (3.12)` change with every Python rotation.
 A generated project's CI job names are `test`, `type-check`, `docs`, `adrs`
 and `gate`. The template repository's own CI is one workflow, `ci.yml`, with
 jobs `test`, `type-check`, `generate`, `adrs` and `gate`, and its Renovate
-manager also covers `template/AGENTS.md.jinja` and
+manager also covers `template/AGENTS.md` and
 `template/.github/workflows/*.jinja`.
 
 ## Consequences
