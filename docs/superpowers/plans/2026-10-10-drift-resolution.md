@@ -170,7 +170,7 @@ Done by the first executing session in `todofixthis/cookiecutter-py` on `feature
 ### Task 3: AGENTS.md split, rules, and settings
 
 **Files:**
-- Modify: `template/AGENTS.md.jinja`, `template/.claude/settings.json`, `template/.gitignore`, `copier.yml` (`_skip_if_exists: [".agents/rules/project.md"]`)
+- Modify: `template/AGENTS.md`, `template/.claude/settings.json`, `template/.gitignore`, `copier.yml` (`_skip_if_exists: [".agents/rules/project.md"]`)
 - Create:
   - `template/.agents/rules/project.md.jinja`
   - `template/.agents/rules/testing.md`
@@ -247,7 +247,7 @@ Done by the first executing session in `todofixthis/cookiecutter-py` on `feature
 - [ ] **Step 1: Merge the workflows and add the gate.** Move `generate-and-validate.yml`'s job into `ci.yml` as job `generate`, and delete that file. Two workflows each with a `gate` would give two check runs of the same name. Add an `adrs` job running `phx-adr check` with the pinned SHA, and one `gate` (Task 4's form) needing `test`, `type-check`, `generate` and `adrs`.
 - [ ] **Step 2: Make Renovate parse the templated files.**
   - In `renovate.json`, extend the `github-actions` manager with `"managerFilePatterns": ["/^template/\\.github/workflows/[^/]+\\.ya?ml(\\.jinja)?$/"]`, and `pep621` with `"/^template/pyproject\\.toml\\.jinja$/"`.
-  - Add the phx-adr custom manager for `AGENTS.md`, `template/AGENTS.md.jinja` and the workflows.
+  - Add the phx-adr custom manager for `AGENTS.md`, `template/AGENTS.md` and the workflows.
   - In `template/renovate.json`, add `"constraints": {"copier": ">=9,<10"}`, so Renovate's copier PRs use the major version the template is tested with.
 - [ ] **Step 3: Confirm Renovate is active on this repo.**
   - Open the repo's Dependency Dashboard issue.
