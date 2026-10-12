@@ -70,7 +70,9 @@ The skills and agent files under `template/` (its `.claude/`, `.agents/`, AGENTS
 
 CI goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.
 
-To rotate the supported Python range in this repo, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, the `generate` job's Python matrix in `ci.yml`, and `pyproject.toml`'s `[tool.black] target-version`.
+To rotate the Python range generated projects support, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, and the `generate` job's Python matrix in `ci.yml`. Add a version only once it has a final release: `uv python list X.Y --only-downloads` must show a build without an `a`, `b` or `rc` suffix.
+
+The root `pyproject.toml`'s `requires-python` and `[tool.black] target-version`, and `uv.lock`, describe the Python this repo's own test harness runs on, not the generated range; change them together, and only when that harness Python changes.
 
 A template change reaches existing projects only once it's released: Renovate's copier manager then opens a PR in every project whose `.copier-answers.yml` records this template. See Releases.
 
