@@ -41,7 +41,7 @@ Rulesets:
 |---|---|---|---|
 | `trunk-develop` | `refs/heads/develop` | `deletion`, `non_fast_forward`, `pull_request` (0 approvals, thread resolution required, merge only), `required_status_checks` (`gate`, integration `15368`, strict) | `RepositoryRole` 5 (Admin), `always` |
 | `trunk-main` | `refs/heads/main` | as `trunk-develop` | none |
-| `tags-release` | tags, `~ALL` | `deletion`, `non_fast_forward` | none |
+| `tags-release` | tags, `~ALL` | `deletion`, `non_fast_forward`, `update` | none |
 
 `require_extra_approval_for_unattributed_changes` is `true` on `phx-claude-siat`, but the provider can't set it. New repos get GitHub's default, and drift goes undetected.
 
@@ -56,7 +56,6 @@ Inputs:
 - `topics` defaults to `[]`.
 - `visibility` defaults to `"public"`; validation allows only `"public"` or `"private"`.
 - `local_path` defaults to `null`; the module uses `coalesce(var.local_path, path.root)`. That resolves to `infra/github/`, and git finds the repo by walking up.
-- `renovate_installation_id` defaults to `null`.
 
 Resources, in dependency order:
 
@@ -70,7 +69,8 @@ Resources, in dependency order:
 4. `github_branch_default` → `develop`.
 5. The three rulesets. They come after the push because `trunk-main` has no bypass and `do_not_enforce_on_create` is off, so creating `main` while the ruleset existed would fail the required check.
    The rulesets are created whatever the visibility. The maintainer is on GitHub Free, where rulesets on a private repo presumably need Pro (unverified), and has accepted that a private repo's rulesets may exist but not be enforced. Keeping them means they start enforcing as soon as the repo goes public. The other possible outcome, also unverified, is that GitHub refuses them outright. Then a private `apply` fails after the repo is created, pushed and given its default branch, and on an existing repo every later `plan` fails at refresh. If a private `apply` ever shows refusal, the follow-up is to create the rulesets only for public repos. The module ADR records this with that revisit-when; nothing forces a private bake to happen sooner.
-6. `github_app_installation_repository` for Renovate, only when `renovate_installation_id` is set. Renovate is installed on selected repos only. Untested: whether the endpoint accepts `gh auth token`'s OAuth token. If not, fall back to `GITHUB_TOKEN`.
+
+Renovate membership isn't managed. GitHub's installation endpoints reject `gh auth token`'s OAuth token, even for the read `github_app_installation_repository` makes on every plan (verified 2026-10-12 on a token with `repo` scope), so each repo is added to Renovate's installation by hand after its first apply. `tags-release`'s `update` rule departs from `phx-claude-siat`: dependents pin the module by tag, so no tag may move, even fast-forward.
 
 Outputs: `html_url`, `ssh_clone_url`, `http_clone_url`.
 
@@ -93,8 +93,7 @@ Bootstrap, once:
   - `name` and `description`.
   - `homepage_url`: the project's ReadTheDocs URL for `public`, `null` for `private`, because RTD's community tier can't build private repos. The root module derives it in HCL from a single `visibility` local, so changing visibility later is a one-line edit. The baked RTD config and badges stay either way; for a private project they're inert until it goes public.
   - `visibility = local.visibility`. That local is the only place the new cookiecutter choice variable `github_visibility` is rendered (`public` first, so it's the default), as a string literal. Both the module argument and `homepage_url` read the local, so editing it changes both.
-  - `renovate_installation_id`, from a new cookiecutter variable with an empty default. The maintainer sets it once in `~/.cookiecutterrc`'s `default_context`.
-- Jinja in `infra/github/` appears only inside HCL string literals, so the unrendered template is still valid HCL. That lets the template repo's own Renovate run `terraform` there. The empty Renovate ID becomes `null` with an HCL conditional, not `{% if %}`.
+- Jinja in `infra/github/` appears only inside HCL string literals, so the unrendered template is still valid HCL. That lets the template repo's own Renovate run `terraform` there.
 - State is local. `.terraform/` and `terraform.tfstate*` are gitignored. Backups are the maintainer's.
 - `.terraform.lock.hcl` is committed, with hashes for at least `darwin_arm64`, `darwin_amd64`, `linux_arm64` and `linux_amd64`. Renovate's own lock updates add every platform the registry lists, so tests mustn't assert exactly four. It has to ship in the template because the post-gen hook commits before `init` runs. Renovate keeps each copy current for provider bumps; module bumps that move the provider constraint need a manual lock update (see Updates).
 
@@ -171,7 +170,7 @@ Cloud sessions install neither hook, so the pre-push hook is the maintainer's si
 - README, "Change visibility" (edit the `visibility` local in `infra/github/main.tf`):
   - **Public to private:** plan and apply. It's lossy (unverified here: GitHub erases stars and watchers, and detaches forks), so the plan comment is the moment to check it's intended. See "Private repos on GitHub Free".
   - **Private to public:** first run `gh repo edit --visibility public --accept-visibility-change-consequences`, then plan and apply. A single `apply` can't do it: the provider sends `security_and_analysis` in its first API call, while the repo is still private, and only changes visibility in a second call. `plan` succeeds, so only `apply` would fail.
-- README, "Create the GitHub repo": bake, then `terraform -chdir=infra/github init`, then `apply`. For a private project, see "Private repos on GitHub Free". Afterwards, `apply` from `develop` after each merged PR that changes `infra/`. To unblock a PR you didn't push yourself (Renovate bumping the module ref or the lock, or a cloud agent's PR), run `gh pr checkout <n>` and then `scripts/infra-plan`.
+- README, "Create the GitHub repo": bake, then `terraform -chdir=infra/github init`, then `apply`, then add the repo to Renovate's installation by hand at <https://github.com/settings/installations> → Renovate → Configure → Repository access (Renovate is installed for selected repos only). A repo skipped here silently never gets module bumps. For a private project, see "Private repos on GitHub Free". Afterwards, `apply` from `develop` after each merged PR that changes `infra/`. To unblock a PR you didn't push yourself (Renovate bumping the module ref or the lock, or a cloud agent's PR), run `gh pr checkout <n>` and then `scripts/infra-plan`.
 - README, "Private repos on GitHub Free", referenced by both bullets above:
   - Rulesets may exist without being enforced. That's accepted, and they enforce once the repo is public.
   - Or GitHub may refuse them. Then a fresh `apply` stops half-applied, after the repo is created and pushed, and on an existing repo every `plan` fails, so the `infra-plan` guard can't pass.
@@ -186,7 +185,7 @@ Cloud sessions install neither hook, so the pre-push hook is the maintainer's si
 
 ## Updates
 
-Renovate opens the module-bump PRs in every dependent repo, with no extra config. Its Terraform manager recognises `github.com/<owner>/<repo>?ref=<tag>` module sources and looks up new versions from the module repo's tags. `config:recommended`, which all three `renovate.json` files extend, enables that manager. Renovate is installed on both template repos, and on each generated project through `renovate_installation_id`.
+Renovate opens the module-bump PRs in every dependent repo, with no extra config. Its Terraform manager recognises `github.com/<owner>/<repo>?ref=<tag>` module sources and looks up new versions from the module repo's tags. `config:recommended`, which all three `renovate.json` files extend, enables that manager. Renovate is installed on both template repos, and on each generated project once it's added by hand after its first apply.
 
 - A module release is a semver tag (`vX.Y.Z`) on the module repo's `main`. Renovate picks it up on its next scheduled run in each dependent repo.
 - **Generated projects:** every module-bump PR changes `infra/`, so the `infra-plan` guard holds it until the maintainer runs `scripts/infra-plan`. That plan shows what the new version would change on that repo. Module bumps are never auto-merged.
@@ -201,7 +200,7 @@ Renovate opens the module-bump PRs in every dependent repo, with no extra config
 ## ADRs
 
 - Module repo:
-  - Share the repo standard as a versioned module. Covers distributing updates through Renovate (see Updates), creating rulesets on private repos on GitHub Free, accepting non-enforcement (revisit when a private `apply` shows refusal: create rulesets for public repos only). Also covers `archive_on_destroy`, and the deferred release App: Terraform can't create Apps (no provider resource), so the next iteration takes one existing shared App, by slug for the App ID plus its installation ID.
+  - Share the repo standard as a versioned module. Covers distributing updates through Renovate (see Updates), creating rulesets on private repos on GitHub Free, accepting non-enforcement (revisit when a private `apply` shows refusal: create rulesets for public repos only). Also covers `archive_on_destroy`, and the deferred release App: Terraform can't create Apps (no provider resource), so the next iteration takes one existing shared App, by slug for the App ID; adding repos to its installation meets the same token rejection as Renovate, so that part is open. Also covers Renovate membership staying manual.
   - No secrets in Terraform state. Secrets go through `gh secret set`. Breach signals: a `sensitive` input, or a `github_actions_secret` resource. Revisit-when records remote state plus OIDC as the route to CI-run plans.
 - Each template: provision the generated project's GitHub repo through the module, including the PR-comment plan guard and why CI can't plan with local state.
 
@@ -210,7 +209,7 @@ Renovate opens the module-bump PRs in every dependent repo, with no extra config
 - Module repo CI:
   - `terraform fmt -check`, `validate`, and `terraform test` with `mock_provider "github"`.
   - Every test run uses `command = plan`. The `terraform_data` push step is built in, so the mock doesn't cover it, and an `apply` run would really push.
-  - The tests assert that `local.enable_security_and_analysis` is true for `public` and false for `private`. They assert the local rather than the block, because the attribute is `Optional`+`Computed`, so its absence is unknown at plan time. For `public` they also assert `security_and_analysis[0].secret_scanning[0].status == "enabled"`, which is known at plan time from config. The broken-fixture rule covers both assertions: inverting the local must fail the first, and a `for_each` that never emits the block must fail the second. A `for_each` that always emits the block can't be caught at plan time, because the block's absence for `private` is unknown. That's why the exact `for_each` form above is required, and why code review checks it. The tests also assert that `visibility` rejects any other value, and that the `trunk-main` bypass is empty, the `trunk-develop` bypass is Admin only, both branch rulesets require strict `gate` from `15368` with merge only, and the Renovate resource count follows its input.
+  - The tests assert that `local.enable_security_and_analysis` is true for `public` and false for `private`. They assert the local rather than the block, because the attribute is `Optional`+`Computed`, so its absence is unknown at plan time. For `public` they also assert `security_and_analysis[0].secret_scanning[0].status == "enabled"`, which is known at plan time from config. The broken-fixture rule covers both assertions: inverting the local must fail the first, and a `for_each` that never emits the block must fail the second. A `for_each` that always emits the block can't be caught at plan time, because the block's absence for `private` is unknown. That's why the exact `for_each` form above is required, and why code review checks it. The tests also assert that `visibility` rejects any other value, and that the `trunk-main` bypass is empty, the `trunk-develop` bypass is Admin only, both branch rulesets require strict `gate` from `15368` with merge only, and `tags-release` blocks deletion, force-pushes and updates.
   - Each assertion is shown to fail against a deliberately broken fixture.
   - Fixture tests for the script's three code paths (`hash`, `changed`, the dirty check), run under both patterns (`^infra/` and the module repo's own). All three paths must:
     - catch a root `.tf` change (module pattern), a file moved out of `infra/`, and a non-ASCII infra path;
