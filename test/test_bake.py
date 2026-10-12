@@ -12,7 +12,7 @@ import copier
 import pytest
 import yaml
 
-TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
+from .conftest import TEMPLATE_ROOT, release_template_change, update_project
 
 # Anything of this shape surviving in a baked file means copier's Jinja pass
 # missed it — the whole point of baking is that none of this remains. Template
@@ -155,40 +155,27 @@ def test_agents_md_names_only_existing_dirs(baked_project: Path) -> None:
                 assert (baked_project / path).exists(), path
 
 
-def test_project_rules_survive_update(template_repo: Path, tmp_path: Path) -> None:
+def test_project_rules_survive_update(
+    committed_bake: Path, template_repo: Path
+) -> None:
     """copier update leaves a project's own rules file as the project wrote it."""
-    dst = tmp_path / "out"
-    copier.run_copy(
-        str(template_repo),
-        dst,
-        data={"copyright_year": 2026, "project_short_description": "x"},
-        defaults=True,
-        vcs_ref="0.0.1",
-        unsafe=False,
-    )
-    project_rules = dst / ".agents" / "rules" / "project.md"
+    project_rules = committed_bake / ".agents" / "rules" / "project.md"
     project_rules.write_text("x", encoding="utf-8")
-    subprocess.run(["git", "init", "--quiet"], check=True, cwd=dst)
-    subprocess.run(["git", "add", "--all"], check=True, cwd=dst)
-    subprocess.run(["git", "commit", "--quiet", "-m", "Bake"], check=True, cwd=dst)
-
-    stub = template_repo / "template" / ".agents" / "rules" / "project.md.jinja"
-    with stub.open("a", encoding="utf-8") as f_out:
-        f_out.write("A line the template adds later.\n")
     subprocess.run(
-        ["git", "commit", "--quiet", "--all", "-m", "0.0.2"],
+        ["git", "commit", "--quiet", "--all", "-m", "Edit"],
         check=True,
-        cwd=template_repo,
+        cwd=committed_bake,
     )
-    subprocess.run(["git", "tag", "0.0.2"], check=True, cwd=template_repo)
 
-    copier.run_update(
-        dst, defaults=True, overwrite=True, skip_answered=True, unsafe=False
+    release_template_change(
+        template_repo,
+        ".agents/rules/project.md.jinja",
+        lambda text: text + "A line the template adds later.\n",
     )
+
+    answers = update_project(committed_bake)
 
     assert project_rules.read_text(encoding="utf-8") == "x"
-    # Read line by line rather than with PyYAML, which ships no type stubs.
-    answers = (dst / ".copier-answers.yml").read_text(encoding="utf-8").splitlines()
     assert "_commit: 0.0.2" in answers
 
 
