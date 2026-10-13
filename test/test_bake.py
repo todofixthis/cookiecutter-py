@@ -1,7 +1,9 @@
 """Bakes the template with default answers and checks the output is well-formed."""
 
 import json
+import os
 import re
+import shutil
 import subprocess
 import tomllib
 from collections.abc import Iterator
@@ -48,6 +50,37 @@ def test_unrendered_regex() -> None:
 def test_bakes_without_error(baked_project: Path) -> None:
     """The template renders into a directory that actually exists."""
     assert baked_project.is_dir()
+
+
+def test_bake_leaves_out_ignored_junk(template_repo: Path, tmp_path: Path) -> None:
+    """Gitignored venvs inside template/ stay out of a bake of the dirty tree."""
+    # copier bakes a dirty checkout by committing its working tree in a clone,
+    # so only .gitignore keeps a venv inside template/ out of the bake; their
+    # dangling interpreter symlinks are copied as symlinks, so they never fail
+    # the bake the way cookiecutter's copy did.
+    shutil.copy2(TEMPLATE_ROOT / ".gitignore", template_repo / ".gitignore")
+    subprocess.run(["git", "add", ".gitignore"], check=True, cwd=template_repo)
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "Ignore"], check=True, cwd=template_repo
+    )
+    junk = (".venv", ".venv.local")
+    for venv_name in junk:
+        venv_bin = template_repo / "template" / venv_name / "bin"
+        venv_bin.mkdir(parents=True)
+        (venv_bin / "python").symlink_to("/nonexistent/uv/python/bin/python3")
+
+    output_dir = tmp_path / "junk-bake"
+    copier.run_copy(
+        str(template_repo),
+        output_dir,
+        data={"copyright_year": 2026, "project_short_description": "x"},
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+
+    assert (output_dir / "pyproject.toml").is_file()
+    assert not any(os.path.lexists(output_dir / name) for name in junk)
 
 
 def test_leaves_no_unrendered_jinja(baked_project: Path) -> None:
