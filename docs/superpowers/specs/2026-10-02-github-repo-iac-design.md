@@ -59,7 +59,7 @@ Inputs:
 
 Resources, in dependency order:
 
-1. `github_repository`, with no `auto_init`. As unconfirmed but cheap insurance against a perpetual diff, it ignores changes to:
+1. `github_repository`, with no `auto_init`. As cheap insurance against a perpetual diff, it ignores changes to the following (the module's bootstrap showed a public repo plans clean without them, so neither is needed today):
    - `security_and_analysis[0].advanced_security`: the provider stores it on read, but it can't be set for public repos.
    - `has_downloads`: the provider always sends `false`, and the API may keep returning `true`.
 
