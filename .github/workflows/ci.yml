@@ -65,11 +65,18 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
+      # Bakes with the copier version uv.lock pins, which Renovate maintains.
+      # UV_PYTHON runs it under the matrix leg's interpreter; the
+      # python_version answer keeps its default, so every leg bakes the
+      # project the template ships.
+      - name: Install the template's dependencies
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
+        run: uv sync --group ci
       - name: Bake a project with default answers
-        # --python runs copier under the matrix leg's interpreter. The
-        # python_version answer keeps its default, so every leg bakes the
-        # project the template ships.
-        run: uvx --python "${{ matrix.python-version }}" "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked/my-python-project
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
+        run: uv run copier copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked/my-python-project
       # UV_PYTHON runs the generated project's environment, and so every step
       # below, under the matrix leg's interpreter.
       - name: Install the generated project's dependencies

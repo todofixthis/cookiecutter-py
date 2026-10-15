@@ -31,11 +31,11 @@ uv run ruff check test
 To bake your working tree into a real project, as CI does, then validate it from inside that project:
 
 ```bash
-rm -rf /tmp/baked && uvx "copier>=9,<10" copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked
+rm -rf /tmp/baked && uv run copier copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked
 cd /tmp/baked && uv sync --group ci && uv run ruff check && uv run mypy src test && uv run pytest
 ```
 
-On git too old for copier 9.19 (e.g. 2.43, which lacks `checkout --end-of-options`), use `uvx "copier==9.18.2"` instead.
+`uv run copier` uses the version `uv.lock` pins, as CI does. If the lock holds copier 9.19 or later and your git is too old for it (e.g. 2.43, which lacks `checkout --end-of-options`), use `uvx "copier==9.18.2"` in its place.
 
 Keep `--vcs-ref=HEAD`: without it copier bakes the newest release tag, not your change. With it, copier also folds in uncommitted edits.
 
