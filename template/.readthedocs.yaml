@@ -9,12 +9,12 @@ build:
   jobs:
     post_create_environment:
       # Install uv
-      # https://github.com/astral-sh/uv/issues/10074#issuecomment-2593075059
       - pip install uv
     post_install:
       # Install dependencies with the 'ci' dependency group.
       # The virtualenv path needs to be set manually for now.
       # See https://github.com/readthedocs/readthedocs.org/pull/11152/
+      # and https://github.com/astral-sh/uv/issues/10074#issuecomment-2593075059
       - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --group ci
 
 sphinx:
