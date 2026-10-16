@@ -6,12 +6,10 @@
 
 ## What
 
-Write a skill in this repository, at `.agents/skills/drift-audit/`, with `.claude/skills`
-symlinked to `.agents/skills` as [`template/`][] does for generated projects. Root AGENTS.md's
-Architecture section says the skills under `template/` don't apply to this repo, so also add a
-line there naming this repo's own skills directory. The maintainer chose this repo over
-phx-claude-siat because the skill encodes how they structure their repositories, which isn't
-general practice. That choice needs no ADR.
+Write a skill in this repository, at `.agents/skills/drift-audit/`, beside this repo's
+`rotate-python-versions` skill; `.claude/skills` already links to `.agents/skills`. The
+maintainer chose this repo over phx-claude-siat because the skill encodes how they structure
+their repositories, which isn't general practice. That choice needs no ADR.
 
 The skill records the audit's method and criteria, and writes a dated report in the audit's
 shape under `docs/audits/`. It covers what copier and Renovate don't reach:
@@ -59,7 +57,7 @@ recorded method, the next audit starts from scratch and its criteria differ.
 ## Acceptance
 
 - `.agents/skills/drift-audit/SKILL.md` exists, stating the method, the criteria and the
-  report's shape, and `.claude/skills` resolves to it. Root AGENTS.md names the directory.
+  report's shape.
 - A test under `test/` bakes a fixture project from a committed, tagged copy of this template,
   reusing `test/conftest.py`'s `template_repo` and `committed_bake` fixtures. A bake
   with `--vcs-ref=HEAD` from a dirty worktree records a `_commit` that a re-bake can't
@@ -73,6 +71,5 @@ recorded method, the next audit starts from scratch and its criteria differ.
 
 [ADR 008]: ../adr/008-propagate-template-changes-with-copier-and-renovate.md
 [audit]: ../audits/2026-10-10-drift-audit.md
-[`template/`]: ../../template/
 [`template/AGENTS.md`]: ../../template/AGENTS.md
 [todofixthis/cookiecutter-py#11]: https://github.com/todofixthis/cookiecutter-py/pull/11

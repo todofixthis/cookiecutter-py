@@ -77,13 +77,9 @@ This repo is a [copier](https://copier.readthedocs.io/) template, not a Python p
 - `template/` — the templated project content. Only the contents of files ending `.jinja` are rendered; every other file's contents copy verbatim, symlinks included. Path names are always rendered, suffix or not. Jinja delimiters are `[[ ]]`, `[% %]` and `[# #]`, so a templated `run:` block uses `[ ]` or `test`, never bash's `[[ ]]`. Inside a `.jinja` file, wrap a TOML array of tables (`[[tool.mypy.overrides]]`) or a literal `[#` in `[% raw %]…[% endraw %]`. The generated AGENTS.md is identical across projects; a project's own sections go in `.agents/rules/project.md`, which copier writes only on first copy (ADR 010). `project.md` may add to, narrow or override a templated rule, and wins where the two conflict; the generated AGENTS.md's pointer to `.agents/rules/` must say so.
 - `test/` — bakes the template with copier and asserts the output is well-formed (no leftover Jinja markers, valid `pyproject.toml`, etc.). This is this repo's only test suite; there's no source package of its own to unit-test. copier bakes this checkout by cloning it and committing the working tree, so a new template file bakes without `git add`, but only `.gitignore` keeps local junk under `template/` (a venv, say) out of the bake.
 
-The skills and agent files under `template/` (its `.claude/`, `.agents/`, AGENTS.md and CLAUDE.md) serve generated projects and don't apply when working on this repo; this repo's own Python rotation steps are below.
+The skills and agent files under `template/` (its `.claude/`, `.agents/`, AGENTS.md and CLAUDE.md) serve generated projects and don't apply when working on this repo. This repo's own skills live in `.agents/skills/`, which `.claude/skills` links to; its `rotate-python-versions` skill covers both the generated Python range and the harness Python.
 
 CI goes further than `test/`: it bakes a real project and runs *that project's own* lint/type-check/test/docs-build commands, so a template change that breaks what it generates fails CI even if `test/`'s lighter checks pass.
-
-To rotate the Python range generated projects support, update `python_version`'s default in `copier.yml`, the default quoted in `README.md`, and the `generate` job's Python matrix in `ci.yml`. Add a version only once it has a final release: `uv python list X.Y --only-downloads` must show a build without an `a`, `b` or `rc` suffix.
-
-The root `pyproject.toml`'s `requires-python` and `[tool.black] target-version`, and `uv.lock`, describe the Python this repo's own test harness runs on, not the generated range; change them together, and only when that harness Python changes.
 
 A template change reaches existing projects only once it's released: Renovate's copier manager then opens a PR in every project whose `.copier-answers.yml` records this template. See Releases.
 
