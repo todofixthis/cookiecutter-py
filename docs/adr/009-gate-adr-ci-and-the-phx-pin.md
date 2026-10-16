@@ -16,10 +16,9 @@ revisit-when: The phx plugin drops its `phx-adr` entry point; todofixthis/terraf
 
 ## Context
 
-[`todofixthis/terraform-github-repository`][terraform module]'s rulesets (module
-v1, on its `feature/module-v1` branch) require one status check, `gate`, on
-`develop` and `main`. No library has a job by that name, so applying the
-module would block every PR.
+[`todofixthis/terraform-github-repository`][terraform module]'s rulesets (from
+its v1.0.0) require one status check, `gate`, on `develop` and `main`. No
+library has a job by that name, so applying the module would block every PR.
 
 The phx plugin's hooks check ADRs inside Claude Code sessions but never block,
 so a CI job running `phx-adr check` is the only check a commit made elsewhere
