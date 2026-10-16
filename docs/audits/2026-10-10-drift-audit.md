@@ -1,5 +1,18 @@
 # todofixthis drift audit — 2026-10-10 (NZT)
 
+> **Superseded as a plan; kept as a dated record.** The findings below describe the
+> repositories as they stood on 2026-10-10 and aren't updated. The decisions they called for
+> are made:
+>
+> - copier with Renovate, and no CI drift check (ADR 008);
+> - the `gate` and `adrs` jobs and the phx pin (ADR 009);
+> - the AGENTS.md split (ADR 010);
+> - dynamic versioning for every library (ADR 005);
+> - develop/main for filters-pydantic, and archiving data-providers and triggers, both
+>   decided while planning #11 and not yet carried out.
+>
+> [todofixthis/cookiecutter-py#11](https://github.com/todofixthis/cookiecutter-py/pull/11) fixed the template's own findings. A library's findings in files the template owns are fixed by adopting it onto the template with `copier copy`, after moving its local AGENTS.md sections into `.agents/rules/project.md` (ADRs 008 and 010), not by hand. Findings in project-specific content still need fixing by hand: the filters and filters-pydantic AGENTS.md errors, section 8, and paddock's `tests/` and `phx-filters` skill. Before acting on any other finding, check whether a later change has already fixed it.
+
 ## Scope and method
 
 **Audited (18):**
@@ -27,16 +40,7 @@ Most of the drift has one cause. **Fixes are made in leaf repos and never flow b
 
 Each repo therefore re-solves the same problem in its own way: four repos keep the phx pin current four different ways (section 2). Every fix made locally widens the gap. Without a propagation mechanism, consolidating once will drift again within months.
 
-**Recommendation:**
-1. Move cookiecutter-py to an update-capable scaffold: [cruft](https://cruft.github.io/cruft/) over the existing template, or copier.
-2. Add a CI `cruft check` to each library, so drift shows up as a red check rather than an audit.
-3. Treat "fix it in the template first, then `cruft update`" as the rule.
-
-This is cross-cutting, so it needs an ADR in cookiecutter-py. It doesn't explain sections 7 and 8 (settings, stale branches, dormant repos) or why Renovate isn't running in the templates. The Terraform module and housekeeping cover those.
-
-**What adoption costs:**
-- None of the existing repos was baked with `.cruft.json`, so each needs `cruft link` plus a three-way reconciliation, and the template must catch up first or the merge runs backwards.
-- cruft merges whole files, so a repo that keeps local AGENTS.md sections (filters' Architecture, for example) will fail `cruft check` permanently. Fix that before turning the check on: split AGENTS.md into a templated file plus a local `.agents/rules/project.md`, or list AGENTS.md in cruft's `skip` and keep it in sync by hand.
+ADR 008 records the propagation mechanism chosen in response. This finding doesn't explain sections 7 and 8 (settings, stale branches, dormant repos) or why Renovate isn't running in the templates. The Terraform module and housekeeping cover those.
 
 ## Findings, by severity
 
@@ -95,8 +99,8 @@ Even the cookiecutters' own non-templated `ci.yml` sits at setup-uv 10.0.1, so R
 
 - **Job names drift:** `typecheck` vs `type-check`, and `adr` vs `adrs`. The module gates on `gate` alone, but anyone reading a PR's checks meets five vocabularies. Standardise on the template's names.
 - **filters-django and filters-iso have no type checking**, and their autohooks run neither mypy nor pytest. They're the furthest behind on every axis, the release skill included (still on their March state).
-- **The template's dynamic version vs the five static repos.** ADR 005 chose dynamic. Either migrate the five, or supersede ADR 005. The release skills are correct for each repo as they stand.
-- **filters-pydantic's main-only branching** is deliberate (its AGENTS.md), but it conflicts with the module, which sets `develop` as default and creates `trunk-develop`. Decide before rollout: a module variable, or adopt develop.
+- **The template's dynamic version vs the five static repos.** ADR 005 chose dynamic, and the five migrate to it. The release skills are correct for each repo as they stand.
+- **filters-pydantic's main-only branching** is deliberate (its AGENTS.md), but it conflicts with the module, which sets `develop` as default and creates `trunk-develop`. It adopts develop.
 - **paddock's `docs_build` hook also watches `README.rst`, `docs/*.md` and `pyproject.toml`.** That's worth upstreaming.
 
 ### 5. Agent instructions (AGENTS.md, skills)
@@ -157,22 +161,6 @@ The module will correct most of these on apply. Use this table as the expected f
   - two `claude/*` branches in paddock.
   - portfolio `feature/phase-7-prerequisites` (June).
   - phx-claude-siat `feature/detect-adr-number-collisions` (Sept 2).
-- **Dormant repos:** data-providers (2023) and triggers (2018: Travis, `setup.py`, `LICENSE`) are neither archived nor modernised. Archive both unless they're coming back.
+- **Dormant repos:** data-providers (2023) and triggers (2018: Travis, `setup.py`, `LICENSE`) are neither archived nor modernised. Archive both.
 - **class-registry's `setup.py` shim** is no longer needed with hatchling.
 - **Web repos split three ways on package manager:** bun (portfolio), npm (purrductivity) and pnpm (browser template). portfolio has no CI, no Renovate and no ADR CI. Fine if it stays private and solo, but it's the largest ADR corpus that nothing validates.
-
-## Recommended sequence
-
-1. **Fix the template first:**
-   - the ReadTheDocs env var (1.2)
-   - the `--hidden` and paddock rotate skill (1.3)
-   - its own ADR frontmatter (1.4)
-   - `gate` and `adrs` jobs with the agreed pin mechanism (1.1, section 2)
-   - Sphinx 9 and setup-uv
-   - the AGENTS.md sections listed in section 5
-   - the marketplace key
-2. **Decide** the update mechanism (cruft/copier) and record it in an ADR. Also decide dynamic vs static versioning and filters-pydantic's branching model.
-3. **Bring filters-django and filters-iso up** (type checking, autohooks, release skill). They're furthest behind.
-4. **Re-sync the other libraries from the template**, keeping their Architecture, Tests and Package sections local in whatever form step 2 chose. Standardise worktree paths as part of this (1.5).
-5. **Ship module v1**, then apply it repo by repo. Each repo's `gate` job (step 1) must land before its apply.
-6. **Housekeeping (section 8).**
