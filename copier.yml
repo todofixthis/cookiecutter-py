@@ -1,17 +1,44 @@
-_subdirectory: template
-_templates_suffix: .jinja
+_envops:
+  block_end_string: "%]"
+  block_start_string: "[%"
+  comment_end_string: "#]"
+  comment_start_string: "[#"
+  variable_end_string: "]]"
+  variable_start_string: "[["
 _preserve_symlinks: true
 # Written on first copy, then the project's own: `copier update` never touches
 # it, so local rules survive template releases (ADR 010).
 _skip_if_exists:
   - .agents/rules/project.md
-_envops:
-  block_start_string: "[%"
-  block_end_string: "%]"
-  variable_start_string: "[["
-  variable_end_string: "]]"
-  comment_start_string: "[#"
-  comment_end_string: "#]"
+_subdirectory: template
+_templates_suffix: .jinja
+
+# Questions run alphabetically, except that a question whose default names
+# another answer goes straight after the last answer it names, alphabetically
+# among any others there. copier renders defaults in file order, and a
+# default naming a later answer either fails a `--defaults` bake or silently
+# renders that answer empty (`pypi_project_name` would become `phx-`).
+author_email:
+  type: str
+  default: phx@phx.nz
+
+author_name:
+  type: str
+  default: Phoenix Zerin
+
+copyright_holder:
+  type: str
+  default: "[[ author_name ]]"
+
+# Recorded rather than computed from today's date, so a project's copyright
+# notice doesn't move on every `copier update` (ADR 008).
+copyright_year:
+  type: int
+  validator: "[% if copyright_year < 1000 or copyright_year > 9999 %]Must be a 4-digit year[% endif %]"
+
+github_username:
+  type: str
+  default: todofixthis
 
 project_name:
   type: str
@@ -25,34 +52,12 @@ package_name:
   type: str
   default: "[[ project_name.lower().replace(' ', '_') ]]"
 
-pypi_project_name:
-  type: str
-  default: "phx-[[ github_project_name ]]"
-
 project_short_description:
   type: str
 
-author_name:
+pypi_project_name:
   type: str
-  default: Phoenix Zerin
-
-author_email:
-  type: str
-  default: phx@phx.nz
-
-github_username:
-  type: str
-  default: todofixthis
-
-# Recorded rather than computed from today's date, so a project's copyright
-# notice doesn't move on every `copier update` (ADR 008).
-copyright_year:
-  type: int
-  validator: "[% if copyright_year < 1000 or copyright_year > 9999 %]Must be a 4-digit year[% endif %]"
-
-copyright_holder:
-  type: str
-  default: "[[ author_name ]]"
+  default: "phx-[[ github_project_name ]]"
 
 # The newest supported Python release; the template supports it and the two
 # before it (ADR 001, restated by ADR 008). Recorded rather than read from the
