@@ -12,8 +12,8 @@ dev = [
     "autohooks-plugin-pytest>=23,<24",
     "autohooks-plugin-ruff>=25,<26",
     # copier >=9.19 runs `git checkout --end-of-options`, which git 2.43
-    # (Ubuntu 24.04's stock git) rejects, so a session on that git needs a
-    # newer git; the lock may sit at 9.18.2 meanwhile.
+    # (Ubuntu 24.04's stock git) rejects. Upgrade that git rather than
+    # holding copier back.
     "copier>=9,<10",
     "mypy>=2,<3",
     "pytest>=9,<10",
@@ -22,8 +22,8 @@ dev = [
 ]
 ci = [
     # copier >=9.19 runs `git checkout --end-of-options`, which git 2.43
-    # (Ubuntu 24.04's stock git) rejects, so a session on that git needs a
-    # newer git; the lock may sit at 9.18.2 meanwhile.
+    # (Ubuntu 24.04's stock git) rejects. Upgrade that git rather than
+    # holding copier back.
     "copier>=9,<10",
     "mypy>=2,<3",
     "pytest>=9,<10",

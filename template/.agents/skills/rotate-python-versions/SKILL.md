@@ -27,7 +27,7 @@ Dependencies can lack wheels for a new version even after its final release. If 
 
 ## Apply the new range through copier
 
-The `python_version` answer in `.copier-answers.yml` is the newest supported version; the template derives `requires-python`, the tox environments, the CI matrix and the version lists in `README.rst` and `docs/` from it. Once the checks in Key detail have passed, commit or stash any local changes (`copier update` needs a clean working tree), then run `uvx "copier>=9,<10" update --defaults --vcs-ref=:current: --data python_version=X.Y` (`:current:` keeps the project on its current template version; on git too old for copier 9.19, e.g. 2.43, use `uvx "copier==9.18.2"`). Follow it with `uv lock`, and check each location above by hand for anything the template doesn't generate.
+The `python_version` answer in `.copier-answers.yml` is the newest supported version; the template derives `requires-python`, the tox environments, the CI matrix and the version lists in `README.rst` and `docs/` from it. Once the checks in Key detail have passed, commit or stash any local changes (`copier update` needs a clean working tree), then run `uvx "copier>=9,<10" update --defaults --vcs-ref=:current: --data python_version=X.Y` (`:current:` keeps the project on its current template version; copier 9.19 and later need a git newer than 2.43, so if copier fails on `--end-of-options`, stop and tell the maintainer that the environment's git needs upgrading rather than falling back to an older copier). Follow it with `uv lock`, and check each location above by hand for anything the template doesn't generate.
 
 ## After editing
 
