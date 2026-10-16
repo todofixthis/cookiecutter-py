@@ -4,6 +4,17 @@ Before writing code, check:
 
 - `docs/adr/INDEX.md` — prior decisions (don't re-litigate)
 - `docs/superpowers/plans/` — current implementation plan, if one exists
+- `docs/backlog/` — deferred work; `rg <area> docs/backlog/` before starting on an area
+
+## Deferred work
+
+**Deferred work is never a GitHub issue here (ADR 011).** The tracker stays enabled for Renovate's Dependency Dashboard, so nothing stops you filing one, but no future session will read it. Asked to "file an issue for that", write the backlog file instead and say so. Do it their way only if they ask again after hearing that.
+
+Work you defer goes in `docs/backlog/<slug>.md`, one file per item, in the shape `docs/backlog/README.md` fixes. Name the paths the item binds in its prose: `rg` is the only way to find it. Two cases go elsewhere:
+- a condition that would reopen a decision goes in that ADR's `revisit-when`;
+- a constraint a future editor must meet goes in a comment where they'll meet it.
+
+Delete an item on the branch that finishes its work. Nothing checks for stale items.
 
 ## Architecture Decision Records
 
