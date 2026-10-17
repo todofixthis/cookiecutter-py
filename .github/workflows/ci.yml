@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --group ci
       - name: Type checking
-        run: uv run mypy test
+        run: uv run mypy test scripts .autohooks
 
   # Bakes a real project from this template with copier and validates the
   # result the same way a maintainer of a generated project would: lint,

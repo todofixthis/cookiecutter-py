@@ -6,7 +6,6 @@ import re
 import shutil
 import subprocess
 import tomllib
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -22,21 +21,6 @@ from .conftest import TEMPLATE_ROOT, release_template_change, update_project
 # don't match; the last branch catches a file the port forgot to rename to
 # `.jinja`, whose cookiecutter markers would otherwise copy through verbatim.
 RE_UNRENDERED_JINJA = re.compile(r"\[\[ .*? \]\]|\[% .*? %\]|\{\{ *cookiecutter\.")
-
-
-@pytest.fixture
-def baked_project(tmp_path: Path) -> Iterator[Path]:
-    """Bakes the template with its default answers into a temp directory."""
-    output_dir = tmp_path / "out"
-    copier.run_copy(
-        str(TEMPLATE_ROOT),
-        output_dir,
-        data={"copyright_year": 2026, "project_short_description": "x"},
-        defaults=True,
-        vcs_ref="HEAD",
-        unsafe=False,
-    )
-    yield output_dir
 
 
 def test_unrendered_regex() -> None:

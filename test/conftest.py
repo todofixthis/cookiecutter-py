@@ -2,13 +2,28 @@
 
 import shutil
 import subprocess
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import copier
 import pytest
 
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
+
+
+@pytest.fixture
+def baked_project(tmp_path: Path) -> Iterator[Path]:
+    """Bakes the template with its default answers into a temp directory."""
+    output_dir = tmp_path / "out"
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        output_dir,
+        data={"copyright_year": 2026, "project_short_description": "x"},
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    yield output_dir
 
 
 @pytest.fixture

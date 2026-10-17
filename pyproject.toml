@@ -21,6 +21,8 @@ dev = [
     "types-pyyaml>=6.0.12.20260906,<7.0.0.0",
 ]
 ci = [
+    # test/ exercises the repo's own autohooks plugins.
+    "autohooks>=26,<27",
     # copier >=9.19 runs `git checkout --end-of-options`, which git 2.43
     # (Ubuntu 24.04's stock git) rejects. Upgrade that git rather than
     # holding copier back.
@@ -42,7 +44,10 @@ extend-exclude = ["template"]
 
 [tool.autohooks]
 mode = "pythonpath"
+# regenerate_template_owned runs first: it may regenerate and stage the rule,
+# which pytest then checks is current.
 pre-commit = [
+    "regenerate_template_owned",
     "autohooks.plugins.black",
     "autohooks.plugins.mypy",
     "autohooks.plugins.pytest",

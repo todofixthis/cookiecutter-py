@@ -237,6 +237,7 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 ci = [
+    { name = "autohooks" },
     { name = "copier" },
     { name = "mypy" },
     { name = "pytest" },
@@ -259,6 +260,7 @@ dev = [
 
 [package.metadata.requires-dev]
 ci = [
+    { name = "autohooks", specifier = ">=26,<27" },
     { name = "copier", specifier = ">=9,<10" },
     { name = "mypy", specifier = ">=2,<3" },
     { name = "pytest", specifier = ">=9,<10" },
