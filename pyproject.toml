@@ -1,7 +1,7 @@
 [project]
 name = "cookiecutter-py"
 version = "0.0.0"
-description = "Cookiecutter template for todofixthis Python projects"
+description = "Copier template for todofixthis Python projects"
 requires-python = ">=3.12"
 
 [dependency-groups]
@@ -11,31 +11,37 @@ dev = [
     "autohooks-plugin-mypy>=23,<24",
     "autohooks-plugin-pytest>=23,<24",
     "autohooks-plugin-ruff>=25,<26",
-    "cookiecutter>=2,<3",
+    "copier>=9,<10",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "pyyaml>=6.0.3,<7.0.0",
+    "types-pyyaml>=6.0.12.20260906,<7.0.0.0",
 ]
 ci = [
-    "cookiecutter>=2,<3",
+    # test/ exercises the repo's own autohooks plugins.
+    "autohooks>=26,<27",
+    "copier>=9,<10",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "pyyaml>=6.0.3,<7.0.0",
 ]
 
 [tool.uv]
-# This repo is a cookiecutter template, not a Python package — nothing here
+# This repo is a copier template, not a Python package — nothing here
 # gets built or published, so uv shouldn't try to.
 package = false
 
 [tool.ruff]
-# The templated project directory's pyproject.toml has unrendered Jinja in
-# fields ruff tries to parse as real values (e.g. requires-python) when it
-# walks the tree looking for nested project roots — it isn't a real project,
-# so exclude it rather than let ruff choke on it.
-extend-exclude = ["{{ cookiecutter.github_project_name }}"]
+# template/ holds unrendered project files (`*.jinja`, and paths like
+# `src/[[ package_name ]]/`) — not real code, so ruff shouldn't lint it.
+extend-exclude = ["template"]
 
 [tool.autohooks]
 mode = "pythonpath"
+# regenerate_template_owned runs first: it may regenerate and stage the rule,
+# which pytest then checks is current.
 pre-commit = [
+    "regenerate_template_owned",
     "autohooks.plugins.black",
     "autohooks.plugins.mypy",
     "autohooks.plugins.pytest",
@@ -44,20 +50,23 @@ pre-commit = [
 
 [tool.autohooks.plugins.ruff.check]
 # Unlike mypy, ruff resolves config per file (nearest ancestor
-# pyproject.toml), not from cwd — so a staged file under
-# {{ cookiecutter.github_project_name }}/ finds that directory's own
-# unrendered pyproject.toml before this one and chokes on it (see
-# [tool.ruff] above). Pinning --config here is what `extend-exclude`
-# cannot do for a file already inside the excluded directory.
+# pyproject.toml), not from cwd — so a staged file under template/ would find
+# a nested pyproject.toml before this one, were one ever added there (see
+# [tool.ruff] above). Pinning --config here is what `extend-exclude` cannot
+# do for a file already inside the excluded directory.
 arguments = ["--output-format=concise", "--config", "pyproject.toml"]
+
+[tool.black]
+# Explicit, because black otherwise infers every version `requires-python`
+# allows, including ones newer than the running interpreter can parse.
+target-version = ["py312", "py313", "py314"]
 
 [tool.mypy]
 strict = true
 
-[[tool.mypy.overrides]]
-# cookiecutter ships no py.typed marker or stubs package.
-module = "cookiecutter.*"
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
+# The bake copies from `vcs_ref="HEAD"` of this repo, and copier warns when it
+# folds in uncommitted changes. That's on purpose: the tests must bake the
+# working tree under test, not the last commit.
+filterwarnings = ["ignore::copier.errors.DirtyLocalWarning"]
 testpaths = ["test"]

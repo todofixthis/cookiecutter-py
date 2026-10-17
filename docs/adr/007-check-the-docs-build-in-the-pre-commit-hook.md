@@ -2,7 +2,9 @@
 status: Archived
 date: 2026-09-10
 archived-because: Comments in .autohooks/docs_build.py and above the docs_build entry in pyproject.toml's autohooks pre-commit list each name this decision, met while either is being edited.
-scope: ["{{ cookiecutter.github_project_name }}/.autohooks/", "{{ cookiecutter.github_project_name }}/pyproject.toml"]
+scope:
+  - template/.autohooks/
+  - template/pyproject.toml.jinja
 summary: Generate projects with a docs_build autohooks plugin that runs sphinx-build -W -E (full re-read, not incremental) on staged docs/docstring changes, matching ReadTheDocs' fail_on_warning rather than the generate-and-validate workflow's lenient build.
 revisit-when: A generated project's autohooks pre-commit chain grows a cheaper way to catch a broken docs build than a full Sphinx rebuild.
 ---

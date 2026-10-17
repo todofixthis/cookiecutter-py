@@ -1,0 +1,117 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "[[ pypi_project_name ]]"
+dynamic = ["version"]
+description = "[[ project_short_description ]]"
+authors = [{ name = "[[ author_name ]]", email = "[[ author_email ]]" }]
+requires-python = ">=[[ python_major ]].[[ python_minor | int - 2 ]]"
+readme = "README.rst"
+license = "MIT"
+
+# :see: https://pypi.org/classifiers/
+keywords = [
+]
+classifiers = [
+]
+
+[project.urls]
+Repository = "https://github.com/[[ github_username ]]/[[ github_project_name ]]"
+Documentation = "https://[[ pypi_project_name ]].readthedocs.io/"
+Changelog = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/releases"
+Issues = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/issues"
+
+[dependency-groups]
+# I'm only one person, so to keep from getting overwhelmed, I'm only committing
+# to supporting the 3 most recent versions of Python (see
+# https://github.com/todofixthis/cookiecutter-py/blob/main/docs/adr/008-propagate-template-changes-with-copier-and-renovate.md).
+dev = [
+    "autohooks>=26,<27",
+    "autohooks-plugin-black>=23,<24",
+    "autohooks-plugin-mypy>=23,<24",
+    "autohooks-plugin-pytest>=23,<24",
+    "autohooks-plugin-ruff>=25,<26",
+    "mypy>=2,<3",
+    "pytest>=9,<10",
+    "sphinx>=9,<10",
+    "sphinx_rtd_theme>=3.1,<4",
+    "tox>=4,<5",
+    "tox-uv>=1,<2",
+]
+
+# Used by GitHub Actions and ReadTheDocs.
+ci = [
+    "mypy>=2,<3",
+    "pytest>=9,<10",
+    "sphinx>=9,<10",
+    "sphinx_rtd_theme>=3.1,<4",
+    "tox-uv>=1,<2",
+]
+
+[tool.autohooks]
+mode = "pythonpath"
+pre-commit = [
+    "autohooks.plugins.black",
+    "autohooks.plugins.mypy",
+    "autohooks.plugins.pytest",
+    "autohooks.plugins.ruff",
+    # Runs a strict, full-reread Sphinx build on staged docs/docstring
+    # changes (see
+    # https://github.com/todofixthis/cookiecutter-py/blob/main/docs/adr/007-check-the-docs-build-in-the-pre-commit-hook.md)
+    # — removing this reopens a gap neither CI nor the pre-commit chain
+    # otherwise catches.
+    "docs_build",
+]
+
+[tool.black]
+# Explicit, because black otherwise infers every version `requires-python`
+# allows, including ones newer than the running interpreter can parse.
+target-version = [
+    "py[[ python_major ]][[ python_minor ]]",
+    "py[[ python_major ]][[ python_minor | int - 1 ]]",
+    "py[[ python_major ]][[ python_minor | int - 2 ]]",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/[[ package_name ]]",
+    "LICENCE.txt",
+    "docs",
+    "test",
+]
+exclude = ["docs/_build"]
+
+[tool.hatch.build.targets.wheel]
+include = ["src/[[ package_name ]]"]
+exclude = ["docs/_build"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src/[[ package_name ]]" = "[[ package_name ]]"
+
+[tool.hatch.version]
+path = "src/[[ package_name ]]/__init__.py"
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
+[tool.tox]
+env_list = [
+    "py[[ python_major ]][[ python_minor ]]",
+    "py[[ python_major ]][[ python_minor | int - 1 ]]",
+    "py[[ python_major ]][[ python_minor | int - 2 ]]",
+]
+
+[tool.tox.env_run_base]
+commands = [
+    ["pytest"],
+    ["mypy", "src", "test"],
+]
+runner = "uv-venv-lock-runner"
+
+[tool.uv]
+keyring-provider = "subprocess"
