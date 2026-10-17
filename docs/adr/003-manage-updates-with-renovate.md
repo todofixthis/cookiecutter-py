@@ -1,7 +1,9 @@
 ---
 status: Accepted
 date: 2026-08-29
-scope: [renovate.json, "{{ cookiecutter.github_project_name }}/renovate.json"]
+scope:
+  - renovate.json
+  - template/renovate.json
 summary: Manage dependency and GitHub Action updates via Renovate, not Dependabot, matching both sibling repos.
 ---
 
