@@ -13,7 +13,7 @@ Update all version references consistently when adding or dropping Python suppor
 - **`uv.lock`** — regenerate with `uv lock` after changing `requires-python`, and commit it with the other edits; a stale lock no longer matches `pyproject.toml`, so CI's `uv sync` silently re-resolves it and tests dependencies nobody committed (`uv lock --check` confirms it is current)
 - **`.github/workflows/`** — CI matrix `python-version` list (each entry must match a tox environment)
 - **`docs/` and `README.rst`** — requirements/compatibility version list (not ADRs under `docs/adr/`, which record the versions at the time of each decision)
-- **`AGENTS.md`** — any version range mentioned in comments
+- **`.agents/rules/project.md`** — any version range this project's own rules mention
 
 ## Key detail
 
