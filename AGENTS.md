@@ -48,7 +48,7 @@ rm -rf /tmp/baked && uv run copier copy --defaults --vcs-ref=HEAD --data copyrig
 cd /tmp/baked && uv sync --group ci && uv run ruff check && uv run mypy src test && uv run pytest
 ```
 
-`uv run copier` uses the version `uv.lock` pins, as CI does. copier 9.19 and later run `git checkout --end-of-options`, which git 2.43 rejects. If copier fails that way, stop and tell the maintainer that the environment's git needs upgrading. Don't fall back to an older copier.
+`uv run copier` uses the version `uv.lock` pins, as CI does.
 
 Keep `--vcs-ref=HEAD`: without it copier bakes the newest release tag, not your change. With it, copier also folds in uncommitted edits.
 
