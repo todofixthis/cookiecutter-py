@@ -85,6 +85,25 @@ def test_generates_valid_pyproject_toml(baked_project: Path) -> None:
     assert data["project"]["name"] == "phx-my-python-project"
 
 
+def test_docs_url_follows_repository_name(baked_project: Path) -> None:
+    """ReadTheDocs links use the repository name, not the PyPI name."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    expected = "https://my-python-project.readthedocs.io/"
+    assert data["project"]["urls"]["Documentation"] == expected
+    for path in ("README.rst", ".agents/skills/release/SKILL.md"):
+        text = (baked_project / path).read_text(encoding="utf-8")
+        assert "phx-my-python-project.readthedocs" not in text, path
+        assert "projects/phx-my-python-project/" not in text, path
+
+
+def test_uv_trusts_system_certs(baked_project: Path) -> None:
+    """The generated project's uv reads system certificates, as Leash needs."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    assert data["tool"]["uv"]["system-certs"] is True
+
+
 def test_generates_expected_package_layout(baked_project: Path) -> None:
     """The generated package directory and its py.typed marker both exist."""
     package_dir = baked_project / "src" / "my_python_project"
@@ -270,6 +289,12 @@ def read_release_skill(project: Path) -> str:
     """Return the baked release skill's text."""
     path = project / ".agents" / "skills" / "release" / "SKILL.md"
     return path.read_text(encoding="utf-8")
+
+
+def test_release_skill_publishes_key_fingerprint(baked_project: Path) -> None:
+    """Release notes carry the signing key's fingerprint, not a lookup hint."""
+    skill = read_release_skill(baked_project)
+    assert "Key fingerprint: `457997A2A506270F918D7BD1925CC6E316680401`" in skill
 
 
 def test_release_skill_writes_notes_file(baked_project: Path) -> None:

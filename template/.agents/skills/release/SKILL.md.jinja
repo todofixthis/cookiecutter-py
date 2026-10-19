@@ -204,7 +204,7 @@ Because `develop` now contains all of `main`'s commits, the histories no longer 
 >   - {migration instructions}
 >   - {error you'll see if you don't migrate}
 >
-> Full migration guide: [Upgrading to [[ project_name ]] v{major}](https://[[ pypi_project_name ]].readthedocs.io/en/latest/upgrading_to_v{major}.html)
+> Full migration guide: [Upgrading to [[ project_name ]] v{major}](https://[[ readthedocs_slug ]].readthedocs.io/en/latest/upgrading_to_v{major}.html)
 
 ## New features
 ## Enhancements
@@ -216,7 +216,7 @@ Because `develop` now contains all of `main`'s commits, the histories no longer 
 > 2. Download the `.whl` or `.tar.gz` and its matching `.sig` file from the release assets
 > 3. Verify: `gpg --verify [[ pypi_project_name.replace('-', '_') ]]-<version>-py3-none-any.whl.sig [[ pypi_project_name.replace('-', '_') ]]-<version>-py3-none-any.whl`
 >
-> Key fingerprint: run `gpg --fingerprint [[ author_email ]]` to look it up
+> Key fingerprint: `[[ gpg_key_fingerprint ]]`
 
 # SHA256 Checksums
 ```
@@ -231,7 +231,7 @@ A filled-in breaking changes alert:
 >   - Replace with `SomeClass.new_method()`
 >   - You'll know you need to migrate if you see: `AttributeError: 'SomeClass' object has no attribute 'old_method'`
 >
-> Full migration guide: [Upgrading to [[ project_name ]] v{major}](https://[[ pypi_project_name ]].readthedocs.io/en/latest/upgrading_to_v{major}.html)
+> Full migration guide: [Upgrading to [[ project_name ]] v{major}](https://[[ readthedocs_slug ]].readthedocs.io/en/latest/upgrading_to_v{major}.html)
 ```
 
 ### Grouping related items
