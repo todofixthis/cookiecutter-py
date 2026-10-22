@@ -13,11 +13,12 @@ _skip_if_exists:
 _subdirectory: template
 _templates_suffix: .jinja
 
-# Questions run alphabetically, except that a question whose default names
-# another answer goes straight after the last answer it names, alphabetically
-# among any others there. copier renders defaults in file order, and a
-# default naming a later answer either fails a `--defaults` bake or silently
-# renders that answer empty (`pypi_project_name` would become `phx-`).
+# Questions run alphabetically, except that a question whose default names an
+# answer placed after it in this file moves to straight after the last such
+# answer, alphabetically among any others moved there. copier renders defaults
+# in file order, and a default naming a later answer either fails a
+# `--defaults` bake or silently renders that answer empty (`pypi_project_name`
+# would become `phx-`).
 author_email:
   type: str
   default: phx@phx.nz
@@ -79,6 +80,18 @@ python_minor:
   type: str
   default: "[[ python_version.split('.')[1] ]]"
   when: false
+
+# The project's ReadTheDocs subdomain: the PyPI name without its `phx-`
+# prefix (filters.readthedocs.io, not phx-filters). filters and
+# class-registry first shipped unprefixed at a former employer, which
+# abandoned them without taking them down; the maintainer forked them and
+# repointed the old ReadTheDocs domains at the forks. Once copied from this
+# template, each records its own answer, so changing this default won't move
+# their slugs on update; it keeps new projects in the same URL style as
+# those two.
+readthedocs_slug:
+  type: str
+  default: "[[ pypi_project_name | regex_replace('^phx-', '') ]]"
 
 # Seeds `__version__`; without it hatchling's dynamic version renders empty.
 version:

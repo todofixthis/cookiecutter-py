@@ -22,5 +22,9 @@
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigests"
-  ]
+  ],
+  "lockFileMaintenance": {
+    "description": "Refresh uv.lock weekly, so transitive dependencies (filelock's Docker/macOS locking fix, say) reach projects without a direct pin.",
+    "enabled": true
+  }
 }

@@ -242,6 +242,7 @@ ci = [
     { name = "mypy" },
     { name = "pytest" },
     { name = "pyyaml" },
+    { name = "types-pyyaml" },
 ]
 dev = [
     { name = "autohooks" },
@@ -265,6 +266,7 @@ ci = [
     { name = "mypy", specifier = ">=2,<3" },
     { name = "pytest", specifier = ">=9,<10" },
     { name = "pyyaml", specifier = ">=6.0.3,<7.0.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20260906,<7.0.0.0" },
 ]
 dev = [
     { name = "autohooks", specifier = ">=26,<27" },

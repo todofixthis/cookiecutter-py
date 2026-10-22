@@ -4,7 +4,8 @@ version: 2
 build:
   os: ubuntu-24.04
   tools:
-    python: "latest"
+    # The newest version CI tests: "latest" can outrun dependency wheels.
+    python: "[[ python_version ]]"
 
   jobs:
     post_create_environment:
@@ -15,7 +16,8 @@ build:
       # The virtualenv path needs to be set manually for now.
       # See https://github.com/readthedocs/readthedocs.org/pull/11152/
       # and https://github.com/astral-sh/uv/issues/10074#issuecomment-2593075059
-      - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --group ci
+      # --no-default-groups keeps out `dev`, as CI does.
+      - UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --no-default-groups --group ci
 
 sphinx:
   configuration: docs/conf.py

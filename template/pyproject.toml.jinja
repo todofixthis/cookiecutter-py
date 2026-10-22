@@ -19,7 +19,7 @@ classifiers = [
 
 [project.urls]
 Repository = "https://github.com/[[ github_username ]]/[[ github_project_name ]]"
-Documentation = "https://[[ pypi_project_name ]].readthedocs.io/"
+Documentation = "https://[[ readthedocs_slug ]].readthedocs.io/"
 Changelog = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/releases"
 Issues = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/issues"
 
@@ -43,8 +43,10 @@ dev = [
 
 # Used by GitHub Actions and ReadTheDocs.
 ci = [
+    "black>=26,<27",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "ruff>=0.17,<0.18",
     "sphinx>=9,<10",
     "sphinx_rtd_theme>=3.1,<4",
     "tox-uv>=1,<2",
@@ -115,3 +117,5 @@ runner = "uv-venv-lock-runner"
 
 [tool.uv]
 keyring-provider = "subprocess"
+# Fix SSL errors when running in Leash containers
+system-certs = true

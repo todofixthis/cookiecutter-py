@@ -25,14 +25,22 @@ uv run autohooks activate --mode=pythonpath
 uv run git commit
 # Sync deps after pulling
 uv sync --group=dev
+# Add a runtime dependency at its latest version
+uv add --bounds major <package>
+# Add a dev dependency at its latest version
+uv add --bounds major --group dev <package>
 # Run tests (current Python)
 uv run pytest
+# Count tests: note it before adding behaviour, and check it has grown after
+uv run pytest --collect-only -q
 # Run tests (all supported versions)
 uv run tox -p
 # Type check
 uv run mypy src test
 # Lint
 uv run ruff check
+# Check formatting (the pre-commit hook reformats; CI only checks)
+uv run black --check .
 # Build docs
 uv run make -C docs clean && uv run make -C docs html
 ```
