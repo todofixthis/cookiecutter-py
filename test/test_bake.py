@@ -86,7 +86,7 @@ def test_generates_valid_pyproject_toml(baked_project: Path) -> None:
 
 
 def test_docs_url_follows_repository_name(baked_project: Path) -> None:
-    """ReadTheDocs links use the repository name, not the PyPI name."""
+    """ReadTheDocs links use the PyPI name without its `phx-` prefix."""
     with (baked_project / "pyproject.toml").open("rb") as f_in:
         data = tomllib.load(f_in)
     expected = "https://my-python-project.readthedocs.io/"
