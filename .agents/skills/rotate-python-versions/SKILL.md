@@ -23,11 +23,15 @@ from it (`requires-python`, tox, the CI matrix, the docs). Change three places t
 - **`README.md`:** the default it quotes.
 - **`.github/workflows/ci.yml`:** the `generate` job's `python-version` matrix, which lists
   the new default and the two releases before it, each quoted so YAML keeps `3.20` a string.
+  The `test` and `type-check` jobs pin the matrix's newest too.
 
 Add a version only once it has a final release: `uv python list X.Y --only-downloads` must
 show a build without an `a`, `b` or `rc` suffix. uv lists only the builds it knows of, so a
 missing final build can mean an outdated uv. Either way, stop and tell the maintainer rather
-than adding the version.
+than adding the version. The generated `.readthedocs.yaml` builds on the new default too, so
+ReadTheDocs must also list it under `build.tools.python` in its
+[config-file reference](https://docs.readthedocs.io/en/stable/config-file/v2.html#build-tools-python);
+if it doesn't, stop and tell the maintainer, since docs builds would fail with CI still green.
 
 Rotating the range up leaves the harness floor valid. Moving it down, so that its oldest
 version falls below the floor, needs the harness floor lowered first.

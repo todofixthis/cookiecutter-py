@@ -7,6 +7,12 @@ on:
 permissions:
   contents: read
 
+# Every uv command here leaves out the default `dev` group, whose tooling
+# (autohooks → pontos → lxml) can lack wheels for a new Python. A flag on
+# `uv sync` alone isn't enough: each `uv run` would install `dev` again.
+env:
+  UV_NO_DEFAULT_GROUPS: "1"
+
 jobs:
   test:
     runs-on: ubuntu-latest

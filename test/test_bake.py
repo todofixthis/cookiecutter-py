@@ -241,6 +241,24 @@ def test_project_rules_survive_update(
     assert "_commit: 0.0.2" in answers
 
 
+def test_ci_leaves_out_dev_group(baked_project: Path) -> None:
+    """Every uv command in CI leaves out `dev`, whose tooling can lack wheels."""
+    workflow = yaml.safe_load(
+        (baked_project / ".github/workflows/build.yml").read_text(encoding="utf-8")
+    )
+    assert workflow["env"]["UV_NO_DEFAULT_GROUPS"] == "1"
+
+
+def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None:
+    """ReadTheDocs builds on the newest tested Python, without the `dev` group."""
+    config = yaml.safe_load(
+        (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
+    )
+    assert config["build"]["tools"]["python"] == "3.14"
+    (sync,) = config["build"]["jobs"]["post_install"]
+    assert "uv sync --no-default-groups --group ci" in sync
+
+
 def load_ci_jobs(project: Path) -> dict[str, dict[str, Any]]:
     """Parses the baked ``build.yml`` and returns its jobs by name."""
     workflow = yaml.safe_load(

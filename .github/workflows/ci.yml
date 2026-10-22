@@ -7,6 +7,12 @@ on:
 permissions:
   contents: read
 
+# Every uv command here leaves out the default `dev` group, whose tooling
+# (autohooks → pontos → lxml) can lack wheels for a new Python. A flag on
+# `uv sync` alone isn't enough: each `uv run` would install `dev` again.
+env:
+  UV_NO_DEFAULT_GROUPS: "1"
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,7 +25,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version-file: "pyproject.toml"
+          # The generate matrix's newest. Reading `requires-python` from
+          # pyproject.toml resolves to the latest CPython, which can outrun
+          # dependency wheels.
+          python-version: "3.14"
       - name: Install dependencies
         run: uv sync --group ci
       - name: Run tests
@@ -36,7 +45,10 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version-file: "pyproject.toml"
+          # The generate matrix's newest. Reading `requires-python` from
+          # pyproject.toml resolves to the latest CPython, which can outrun
+          # dependency wheels.
+          python-version: "3.14"
       - name: Install dependencies
         run: uv sync --group ci
       - name: Type checking
