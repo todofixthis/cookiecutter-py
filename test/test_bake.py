@@ -249,6 +249,12 @@ def test_ci_leaves_out_dev_group(baked_project: Path) -> None:
     assert workflow["env"]["UV_NO_DEFAULT_GROUPS"] == "1"
 
 
+def test_ci_lints(baked_project: Path) -> None:
+    """CI's ``lint`` job runs ``ruff check``."""
+    steps = load_ci_jobs(baked_project)["lint"]["steps"]
+    assert any(step.get("run") == "uv run ruff check" for step in steps)
+
+
 def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None:
     """ReadTheDocs builds on the newest tested Python, without the `dev` group."""
     config = yaml.safe_load(
@@ -273,6 +279,7 @@ def test_ci_job_names(baked_project: Path) -> None:
     assert set(load_ci_jobs(baked_project)) == {
         "test",
         "type-check",
+        "lint",
         "docs",
         "adrs",
         "gate",

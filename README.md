@@ -15,7 +15,7 @@ copier prompts for each answer; all but the short description and copyright year
 ## What you get
 
 - `uv` + `hatchling` packaging, `pytest` + `mypy --strict` + `ruff`/`black` (via `autohooks`, not the `pre-commit` framework)
-- Sphinx docs on ReadTheDocs, GitHub Actions CI (test matrix, type-check, docs build, ADR validation, and a `gate` job aggregating the rest as the one required check), Renovate for dependency/Action updates
+- Sphinx docs on ReadTheDocs, GitHub Actions CI (test matrix, type-check, lint, docs build, ADR validation, and a `gate` job aggregating the rest as the one required check), Renovate for dependency/Action updates
 - `AGENTS.md`/`CLAUDE.md`, an ADR workflow under `docs/adr/`, and the `phx@todofixthis` skill marketplace enabled out of the box
 - A guided `release` skill covering version bumps, GPG-signed release artefacts, and PyPI publishing
 

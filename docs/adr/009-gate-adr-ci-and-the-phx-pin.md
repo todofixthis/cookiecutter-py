@@ -106,9 +106,9 @@ skip means a dependency failed. The rejected alternative, listing every job as a
 check in the module, needs a per-repository list in shared Terraform, and
 matrix job names such as `test (3.12)` change with every Python rotation.
 
-A generated project's CI job names are `test`, `type-check`, `docs`, `adrs`
-and `gate`. The template repository's own CI is one workflow, `ci.yml`, with
-jobs `test`, `type-check`, `generate`, `adrs` and `gate`, and its Renovate
+A generated project's CI job names are `test`, `type-check`, `lint`, `docs`,
+`adrs` and `gate`. The template repository's own CI is one workflow, `ci.yml`,
+with jobs `test`, `type-check`, `generate`, `adrs` and `gate`, and its Renovate
 manager also covers `template/AGENTS.md` and
 `template/.github/workflows/*.jinja`.
 

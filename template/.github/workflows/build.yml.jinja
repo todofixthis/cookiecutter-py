@@ -56,6 +56,25 @@ jobs:
       - name: Type checking
         run: uv run mypy src test
 
+  # The pre-commit hook lints too, but a commit made without it (a bare
+  # `git commit`, GitHub's web editor, a Renovate PR) skips that.
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "[[ python_version ]]"
+      - name: Install dependencies
+        run: uv sync --group ci
+      - name: Lint
+        run: uv run ruff check
+
   docs:
     runs-on: ubuntu-latest
 
@@ -96,7 +115,7 @@ jobs:
   # their results into one, so branch protection requires only `gate`. A
   # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   gate:
-    needs: [adrs, docs, test, type-check]
+    needs: [adrs, docs, lint, test, type-check]
     if: always()
     runs-on: ubuntu-latest
 
