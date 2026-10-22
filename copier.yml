@@ -41,12 +41,6 @@ github_username:
   type: str
   default: todofixthis
 
-# Published in each release's notes so users can verify the signed artefacts.
-# The default is the maintainer's key: change it along with author_name.
-gpg_key_fingerprint:
-  type: str
-  default: 457997A2A506270F918D7BD1925CC6E316680401
-
 project_name:
   type: str
   default: My Python Project
@@ -87,11 +81,11 @@ python_minor:
   default: "[[ python_version.split('.')[1] ]]"
   when: false
 
-# The project's ReadTheDocs subdomain, which follows the repository name rather
-# than the PyPI name (filters.readthedocs.io, not phx-filters).
+# The project's ReadTheDocs subdomain: the PyPI name without its `phx-`
+# prefix (filters.readthedocs.io, not phx-filters).
 readthedocs_slug:
   type: str
-  default: "[[ github_project_name ]]"
+  default: "[[ pypi_project_name | regex_replace('^phx-', '') ]]"
 
 # Seeds `__version__`; without it hatchling's dynamic version renders empty.
 version:

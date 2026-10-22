@@ -113,13 +113,36 @@ the version dynamic and does not carry it.
 shasum -a 256 dist/[[ pypi_project_name.replace('-', '_') ]]-* >> release-<version>.md
 ```
 
-**b. GPG-sign the document and each build artefact:**
+**b. GPG-sign the build artefacts and the notes, publishing the signing key's fingerprint.** Run this as one command, since each part needs the variables the one before it sets:
 ```bash
 GPG_KEY=$(git config user.email)
-gpg --local-user "$GPG_KEY" --clearsign release-<version>.md   # → release-<version>.md.asc
-for f in dist/[[ pypi_project_name.replace('-', '_') ]]-*; do gpg --local-user "$GPG_KEY" --detach-sign "$f"; done
-# Creates dist/[[ pypi_project_name.replace('-', '_') ]]-*.sig alongside each artefact
+pkg=dist/[[ pypi_project_name.replace('-', '_') ]]
+# --yes overwrites signatures left by an earlier, interrupted run
+for f in "$pkg"-*.whl "$pkg"-*.tar.gz; do gpg --yes --local-user "$GPG_KEY" --detach-sign "$f"; done
+
+# The primary-key fingerprint of the key that signed, read from a signature,
+# since several keys can share one email address
+sig=$(ls "$pkg"-*.whl.sig | head -n 1)
+GPG_FINGERPRINT=$(gpg --status-fd 1 --verify "$sig" "${sig%.sig}" 2>/dev/null | awk '$2 == "VALIDSIG" {print $12}')
+
+# Users import the key from GitHub, so it must be published there
+if curl -fsSL https://github.com/[[ github_username ]].gpg \
+  | gpg --show-keys --with-colons \
+  | awk -F: '$1 == "fpr" {print $10}' \
+  | grep -qx "$GPG_FINGERPRINT"; then
+  # Removes any copy signed by an earlier run, so a failed signing leaves none
+  rm -f release-<version>.md.asc
+  # Writes release-<version>.md.asc
+  sed -i.bak "s/<fingerprint>/$GPG_FINGERPRINT/" release-<version>.md \
+    && rm release-<version>.md.bak \
+    && gpg --yes --local-user "$GPG_KEY" --clearsign release-<version>.md \
+    && echo "✅ Signed with $GPG_FINGERPRINT, published on GitHub" \
+    || echo "❌ Couldn't fill in or sign release-<version>.md"
+else
+  echo "❌ Signing key '$GPG_FINGERPRINT' isn't published at https://github.com/[[ github_username ]].gpg"
+fi
 ```
+On ❌, stop and pass the message on to the developer. If the signing key isn't published, users couldn't verify the release, since they import the key from that URL; that message names the fingerprint, which is empty if signing failed or GitHub couldn't be reached. Once it's fixed, re-run this step alone: step a has already added the checksums.
 
 **c. Build the release body** — concatenate the notes and the signed copy:
 ```
@@ -216,7 +239,7 @@ Because `develop` now contains all of `main`'s commits, the histories no longer 
 > 2. Download the `.whl` or `.tar.gz` and its matching `.sig` file from the release assets
 > 3. Verify: `gpg --verify [[ pypi_project_name.replace('-', '_') ]]-<version>-py3-none-any.whl.sig [[ pypi_project_name.replace('-', '_') ]]-<version>-py3-none-any.whl`
 >
-> Key fingerprint: `[[ gpg_key_fingerprint ]]`
+> Key fingerprint: `<fingerprint>`
 
 # SHA256 Checksums
 ```

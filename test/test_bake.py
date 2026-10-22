@@ -97,6 +97,32 @@ def test_docs_url_follows_repository_name(baked_project: Path) -> None:
         assert "projects/phx-my-python-project/" not in text, path
 
 
+@pytest.mark.parametrize(
+    ("pypi_project_name", "slug"),
+    [("phx-class-registry", "class-registry"), ("widgets", "widgets")],
+)
+def test_readthedocs_slug_strips_phx_prefix(
+    tmp_path: Path, pypi_project_name: str, slug: str
+) -> None:
+    """The ReadTheDocs slug defaults to the PyPI name without a leading `phx-`."""
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        tmp_path,
+        data={
+            "copyright_year": 2026,
+            "project_short_description": "x",
+            "pypi_project_name": pypi_project_name,
+        },
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    with (tmp_path / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    expected = f"https://{slug}.readthedocs.io/"
+    assert data["project"]["urls"]["Documentation"] == expected
+
+
 def test_uv_trusts_system_certs(baked_project: Path) -> None:
     """The generated project's uv reads system certificates, as Leash needs."""
     with (baked_project / "pyproject.toml").open("rb") as f_in:
@@ -291,10 +317,14 @@ def read_release_skill(project: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_release_skill_publishes_key_fingerprint(baked_project: Path) -> None:
-    """Release notes carry the signing key's fingerprint, not a lookup hint."""
+def test_release_skill_derives_key_fingerprint(baked_project: Path) -> None:
+    """The release skill reads the fingerprint from a signature before signing notes."""
     skill = read_release_skill(baked_project)
-    assert "Key fingerprint: `457997A2A506270F918D7BD1925CC6E316680401`" in skill
+    assert "Key fingerprint: `<fingerprint>`" in skill
+    derive = skill.index('$2 == "VALIDSIG" {print $12}')
+    check = skill.index("if curl -fsSL https://github.com/todofixthis.gpg \\")
+    clearsign = skill.index("--clearsign release-<version>.md")
+    assert derive < check < clearsign
 
 
 def test_release_skill_writes_notes_file(baked_project: Path) -> None:
