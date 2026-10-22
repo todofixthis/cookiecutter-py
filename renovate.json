@@ -27,6 +27,10 @@
       "/^template/\\.github/workflows/[^/]+\\.ya?ml(\\.jinja)?$/"
     ]
   },
+  "lockFileMaintenance": {
+    "description": "Refresh uv.lock weekly, so transitive dependencies reach the harness without a direct pin, as the template's projects do.",
+    "enabled": true
+  },
   "pep621": {
     "managerFilePatterns": [
       "/(^|/)pyproject\\.toml$/",
