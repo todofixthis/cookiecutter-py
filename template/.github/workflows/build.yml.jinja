@@ -56,8 +56,8 @@ jobs:
       - name: Type checking
         run: uv run mypy src test
 
-  # The pre-commit hook lints too, but a commit made without it (a bare
-  # `git commit`, GitHub's web editor, a Renovate PR) skips that.
+  # The pre-commit hook lints and formats too, but a commit made without it (a
+  # bare `git commit`, GitHub's web editor, a Renovate PR) skips that.
   lint:
     runs-on: ubuntu-latest
 
@@ -74,6 +74,8 @@ jobs:
         run: uv sync --group ci
       - name: Lint
         run: uv run ruff check
+      - name: Check formatting
+        run: uv run black --check .
 
   docs:
     runs-on: ubuntu-latest

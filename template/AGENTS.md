@@ -39,6 +39,8 @@ uv run tox -p
 uv run mypy src test
 # Lint
 uv run ruff check
+# Check formatting (the pre-commit hook reformats; CI only checks)
+uv run black --check .
 # Build docs
 uv run make -C docs clean && uv run make -C docs html
 ```

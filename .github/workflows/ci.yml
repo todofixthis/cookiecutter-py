@@ -101,6 +101,11 @@ jobs:
           UV_PYTHON: ${{ matrix.python-version }}
         run: uv run ruff check
         working-directory: /tmp/baked/my-python-project
+      - name: Check the generated project's formatting
+        env:
+          UV_PYTHON: ${{ matrix.python-version }}
+        run: uv run black --check .
+        working-directory: /tmp/baked/my-python-project
       - name: Type-check the generated project
         env:
           UV_PYTHON: ${{ matrix.python-version }}

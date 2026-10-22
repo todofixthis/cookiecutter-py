@@ -251,9 +251,9 @@ def test_ci_leaves_out_dev_group(baked_project: Path) -> None:
 
 
 def test_ci_lints(baked_project: Path) -> None:
-    """CI's ``lint`` job runs ``ruff check``."""
-    steps = load_ci_jobs(baked_project)["lint"]["steps"]
-    assert any(step.get("run") == "uv run ruff check" for step in steps)
+    """CI's ``lint`` job runs ``ruff check`` and ``black --check``."""
+    runs = {step.get("run") for step in load_ci_jobs(baked_project)["lint"]["steps"]}
+    assert {"uv run ruff check", "uv run black --check ."} <= runs
 
 
 def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None:
@@ -335,6 +335,12 @@ def test_renovate_manages_adr_pin(baked_project: Path) -> None:
         "/^\\.github/workflows/build\\.yml$/",
         "/^AGENTS\\.md$/",
     ]
+
+
+def test_renovate_maintains_lock_file(baked_project: Path) -> None:
+    """Renovate refreshes ``uv.lock``, so transitive fixes arrive unpinned."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    assert config["lockFileMaintenance"]["enabled"] is True
 
 
 def read_release_skill(project: Path) -> str:
