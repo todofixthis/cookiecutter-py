@@ -82,7 +82,13 @@ python_minor:
   when: false
 
 # The project's ReadTheDocs subdomain: the PyPI name without its `phx-`
-# prefix (filters.readthedocs.io, not phx-filters).
+# prefix (filters.readthedocs.io, not phx-filters). filters and
+# class-registry first shipped unprefixed at a former employer, which
+# abandoned them without taking them down; the maintainer forked them and
+# repointed the old ReadTheDocs domains at the forks. Once copied from this
+# template, each records its own answer, so changing this default won't move
+# their slugs on update; it keeps new projects in the same URL style as
+# those two.
 readthedocs_slug:
   type: str
   default: "[[ pypi_project_name | regex_replace('^phx-', '') ]]"

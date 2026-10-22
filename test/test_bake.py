@@ -85,8 +85,9 @@ def test_generates_valid_pyproject_toml(baked_project: Path) -> None:
     assert data["project"]["name"] == "phx-my-python-project"
 
 
-def test_docs_url_follows_repository_name(baked_project: Path) -> None:
+def test_docs_links_use_readthedocs_slug(baked_project: Path) -> None:
     """ReadTheDocs links use the PyPI name without its `phx-` prefix."""
+    # copier.yml's `readthedocs_slug` comment says why the prefix goes.
     with (baked_project / "pyproject.toml").open("rb") as f_in:
         data = tomllib.load(f_in)
     expected = "https://my-python-project.readthedocs.io/"
