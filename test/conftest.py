@@ -38,6 +38,13 @@ def template_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     for var in ("GIT_AUTHOR", "GIT_COMMITTER"):
         monkeypatch.setenv(f"{var}_NAME", "Bake Test")
         monkeypatch.setenv(f"{var}_EMAIL", "bake-test@example.com")
+    # A maintainer's global config may sign commits and tags, which fails
+    # for the identity above; config from the environment overrides it.
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "2")
+    monkeypatch.setenv("GIT_CONFIG_KEY_0", "commit.gpgSign")
+    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "false")
+    monkeypatch.setenv("GIT_CONFIG_KEY_1", "tag.gpgSign")
+    monkeypatch.setenv("GIT_CONFIG_VALUE_1", "false")
 
     repo = tmp_path / "template-repo"
     repo.mkdir()
