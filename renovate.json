@@ -19,7 +19,8 @@
   ],
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "helpers:pinGitHubActionDigests",
+    "security:minimumReleaseAgePypi"
   ],
   "github-actions": {
     "managerFilePatterns": [
@@ -28,7 +29,8 @@
     ]
   },
   "lockFileMaintenance": {
-    "description": "Refresh uv.lock weekly, so transitive dependencies reach the harness without a direct pin, as the template's projects do.",
+    "automerge": true,
+    "description": "Refresh uv.lock weekly, merging once CI passes, so transitive dependencies reach the harness without a direct pin, as the template's projects do (ADR 013).",
     "enabled": true
   },
   "pep621": {
