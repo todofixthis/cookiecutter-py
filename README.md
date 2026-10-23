@@ -12,6 +12,11 @@ uvx "copier>=9,<10" copy https://github.com/todofixthis/cookiecutter-py.git my-p
 
 copier prompts for each answer; all but the short description and copyright year have a default. `python_version` (default `3.14`) is the newest Python release the project supports, along with the two before it. copier records the answers in `.copier-answers.yml`, so a later template release can reach the project as a Renovate PR. Use the full URL, not the `gh:` shorthand: copier records the source verbatim, and Renovate can't resolve `gh:`.
 
+## After creating the GitHub repo
+
+- **Renovate.** If Renovate is installed for selected repositories only, add the repo at <https://github.com/settings/installations> → Renovate → Configure → Repository access. Until then the repo gets no dependency updates, nor the PRs that bring template releases, and nothing says so.
+- **Watching.** Unless the repo already shows as watched, click Watch → All Activity on it. A watch belongs to a person, not the repo, so the todofixthis Terraform module leaves it out by design ([its ADR 005](https://github.com/todofixthis/terraform-github-repository/blob/develop/docs/adr/005-keep-personal-preferences-out-of-the-module.md)).
+
 ## What you get
 
 - `uv` + `hatchling` packaging, `pytest` + `mypy --strict` + `ruff`/`black` (via `autohooks`, not the `pre-commit` framework)
