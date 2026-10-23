@@ -4,7 +4,7 @@ date: 2026-08-29
 scope:
   - template/pyproject.toml.jinja
   - template/.github/workflows/build.yml.jinja
-  - template/.readthedocs.yaml
+  - template/.readthedocs.yaml.jinja
 summary: Generate projects using uv + hatchling instead of Poetry, matching what class-registry and phx-claude-siat have both since moved to.
 ---
 

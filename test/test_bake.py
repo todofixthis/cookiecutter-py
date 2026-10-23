@@ -85,6 +85,59 @@ def test_generates_valid_pyproject_toml(baked_project: Path) -> None:
     assert data["project"]["name"] == "phx-my-python-project"
 
 
+def test_docs_links_use_readthedocs_slug(baked_project: Path) -> None:
+    """ReadTheDocs links use the PyPI name without its `phx-` prefix."""
+    # copier.yml's `readthedocs_slug` comment says why the prefix goes.
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    expected = "https://my-python-project.readthedocs.io/"
+    assert data["project"]["urls"]["Documentation"] == expected
+    for path in ("README.rst", ".agents/skills/release/SKILL.md"):
+        text = (baked_project / path).read_text(encoding="utf-8")
+        assert "phx-my-python-project.readthedocs" not in text, path
+        assert "projects/phx-my-python-project/" not in text, path
+
+
+@pytest.mark.parametrize(
+    ("pypi_project_name", "slug"),
+    [("phx-class-registry", "class-registry"), ("widgets", "widgets")],
+)
+def test_readthedocs_slug_strips_phx_prefix(
+    tmp_path: Path, pypi_project_name: str, slug: str
+) -> None:
+    """The ReadTheDocs slug defaults to the PyPI name without a leading `phx-`."""
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        tmp_path,
+        data={
+            "copyright_year": 2026,
+            "project_short_description": "x",
+            "pypi_project_name": pypi_project_name,
+        },
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    with (tmp_path / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    expected = f"https://{slug}.readthedocs.io/"
+    assert data["project"]["urls"]["Documentation"] == expected
+
+
+def test_uv_trusts_system_certs(baked_project: Path) -> None:
+    """The generated project's uv reads system certificates, as Leash needs."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    assert data["tool"]["uv"]["system-certs"] is True
+
+
+def test_uv_waits_for_releases_to_age(baked_project: Path) -> None:
+    """The generated project's uv resolves only releases at least 3 days old."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    assert data["tool"]["uv"]["exclude-newer"] == "3 days"
+
+
 def test_generates_expected_package_layout(baked_project: Path) -> None:
     """The generated package directory and its py.typed marker both exist."""
     package_dir = baked_project / "src" / "my_python_project"
@@ -196,6 +249,30 @@ def test_project_rules_survive_update(
     assert "_commit: 0.0.2" in answers
 
 
+def test_ci_leaves_out_dev_group(baked_project: Path) -> None:
+    """Every uv command in CI leaves out `dev`, whose tooling can lack wheels."""
+    workflow = yaml.safe_load(
+        (baked_project / ".github/workflows/build.yml").read_text(encoding="utf-8")
+    )
+    assert workflow["env"]["UV_NO_DEFAULT_GROUPS"] == "1"
+
+
+def test_ci_lints(baked_project: Path) -> None:
+    """CI's ``lint`` job runs ``ruff check`` and ``black --check``."""
+    runs = {step.get("run") for step in load_ci_jobs(baked_project)["lint"]["steps"]}
+    assert {"uv run ruff check", "uv run black --check ."} <= runs
+
+
+def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None:
+    """ReadTheDocs builds on the newest tested Python, without the `dev` group."""
+    config = yaml.safe_load(
+        (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
+    )
+    assert config["build"]["tools"]["python"] == "3.14"
+    (sync,) = config["build"]["jobs"]["post_install"]
+    assert "uv sync --no-default-groups --group ci" in sync
+
+
 def load_ci_jobs(project: Path) -> dict[str, dict[str, Any]]:
     """Parses the baked ``build.yml`` and returns its jobs by name."""
     workflow = yaml.safe_load(
@@ -210,6 +287,7 @@ def test_ci_job_names(baked_project: Path) -> None:
     assert set(load_ci_jobs(baked_project)) == {
         "test",
         "type-check",
+        "lint",
         "docs",
         "adrs",
         "gate",
@@ -266,10 +344,33 @@ def test_renovate_manages_adr_pin(baked_project: Path) -> None:
     ]
 
 
+def test_renovate_maintains_lock_file(baked_project: Path) -> None:
+    """Renovate refreshes ``uv.lock`` and merges the refresh once CI passes."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    assert config["lockFileMaintenance"]["enabled"] is True
+    assert config["lockFileMaintenance"]["automerge"] is True
+
+
+def test_renovate_waits_for_releases_to_age(baked_project: Path) -> None:
+    """Renovate raises a PyPI update only once uv's cooldown would allow it."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    assert "security:minimumReleaseAgePypi" in config["extends"]
+
+
 def read_release_skill(project: Path) -> str:
     """Return the baked release skill's text."""
     path = project / ".agents" / "skills" / "release" / "SKILL.md"
     return path.read_text(encoding="utf-8")
+
+
+def test_release_skill_derives_key_fingerprint(baked_project: Path) -> None:
+    """The release skill reads the fingerprint from a signature before signing notes."""
+    skill = read_release_skill(baked_project)
+    assert "Key fingerprint: `<fingerprint>`" in skill
+    derive = skill.index('$2 == "VALIDSIG" {print $12}')
+    check = skill.index("if curl -fsSL https://github.com/todofixthis.gpg \\")
+    clearsign = skill.index("--clearsign release-<version>.md")
+    assert derive < check < clearsign
 
 
 def test_release_skill_writes_notes_file(baked_project: Path) -> None:

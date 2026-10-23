@@ -21,6 +21,12 @@
   ],
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests"
-  ]
+    "helpers:pinGitHubActionDigests",
+    "security:minimumReleaseAgePypi"
+  ],
+  "lockFileMaintenance": {
+    "automerge": true,
+    "description": "Refresh uv.lock weekly, merging once CI passes, so transitive dependencies reach the project without a direct pin (ADR 013 in todofixthis/cookiecutter-py).",
+    "enabled": true
+  }
 }

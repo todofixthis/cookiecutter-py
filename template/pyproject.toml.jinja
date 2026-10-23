@@ -19,7 +19,7 @@ classifiers = [
 
 [project.urls]
 Repository = "https://github.com/[[ github_username ]]/[[ github_project_name ]]"
-Documentation = "https://[[ pypi_project_name ]].readthedocs.io/"
+Documentation = "https://[[ readthedocs_slug ]].readthedocs.io/"
 Changelog = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/releases"
 Issues = "https://github.com/[[ github_username ]]/[[ github_project_name ]]/issues"
 
@@ -43,8 +43,10 @@ dev = [
 
 # Used by GitHub Actions and ReadTheDocs.
 ci = [
+    "black>=26,<27",
     "mypy>=2,<3",
     "pytest>=9,<10",
+    "ruff>=0.17,<0.18",
     "sphinx>=9,<10",
     "sphinx_rtd_theme>=3.1,<4",
     "tox-uv>=1,<2",
@@ -115,3 +117,10 @@ runner = "uv-venv-lock-runner"
 
 [tool.uv]
 keyring-provider = "subprocess"
+# Fix SSL errors when running in Leash containers
+system-certs = true
+# Resolve only releases at least 3 days old, so a broken or malicious release
+# is usually yanked before a lock refresh picks it up (ADR 013 in
+# todofixthis/cookiecutter-py). Exempt one package with
+# `exclude-newer-package = { <package> = false }`.
+exclude-newer = "3 days"

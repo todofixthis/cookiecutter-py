@@ -19,7 +19,7 @@ Update all version references consistently when adding or dropping Python suppor
 
 Change only the lower bound of `requires-python` and keep the rest of the specifier (e.g. the `, <4` cap). Use `>=X.Y`, not `~=X.Y` without a patch version — the tilde specifier without a patch (e.g. `~=3.12`) is ambiguous and triggers a uv warning.
 
-Add a version only once it has a final release. Before making any edits, run `uv python list X.Y --only-downloads`: if every match carries an `a`, `b` or `rc` suffix (e.g. `cpython-3.15.0rc2`), the version isn't final, so ask the user how to proceed before touching anything.
+Add a version only once it has a final release. Before making any edits, run `uv python list X.Y --only-downloads`: if every match carries an `a`, `b` or `rc` suffix (e.g. `cpython-3.15.0rc2`), the version isn't final, so ask the user how to proceed before touching anything. ReadTheDocs builds on the newest supported version too, so it must also list X.Y under `build.tools.python` in its [config-file reference](https://docs.readthedocs.io/en/stable/config-file/v2.html#build-tools-python); if it doesn't, ask the user before touching anything, since docs builds would fail while CI stays green.
 
 Required status checks are named per matrix entry (`test (3.12)`), and no file records which ones branch protection requires. Ask the user whether any name a version you are dropping or adding: a required check for a dropped version never reports and blocks every PR.
 

@@ -19,13 +19,19 @@
   ],
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests"
+    "helpers:pinGitHubActionDigests",
+    "security:minimumReleaseAgePypi"
   ],
   "github-actions": {
     "managerFilePatterns": [
       "/^\\.github/workflows/[^/]+\\.ya?ml$/",
       "/^template/\\.github/workflows/[^/]+\\.ya?ml(\\.jinja)?$/"
     ]
+  },
+  "lockFileMaintenance": {
+    "automerge": true,
+    "description": "Refresh uv.lock weekly, merging once CI passes, so transitive dependencies reach the harness without a direct pin, as the template's projects do (ADR 013).",
+    "enabled": true
   },
   "pep621": {
     "managerFilePatterns": [

@@ -25,17 +25,27 @@ uv run autohooks activate --mode=pythonpath
 uv run git commit
 # Sync deps after pulling
 uv sync --group=dev
+# Add a runtime dependency at its latest version
+uv add --bounds major <package>
+# Add a dev dependency at its latest version
+uv add --bounds major --group dev <package>
 # Run tests (current Python)
 uv run pytest
+# Count tests: note it before adding behaviour, and check it has grown after
+uv run pytest --collect-only -q
 # Run tests (all supported versions)
 uv run tox -p
 # Type check
 uv run mypy src test
 # Lint
 uv run ruff check
+# Check formatting (the pre-commit hook reformats; CI only checks)
+uv run black --check .
 # Build docs
 uv run make -C docs clean && uv run make -C docs html
 ```
+
+uv resolves only releases at least 3 days old (`exclude-newer` under `[tool.uv]` in `pyproject.toml`), so "latest" above means the latest that old. To take a newer release of one package, exempt it there with `exclude-newer-package = { <package> = false }`, and remove the exemption once the release is 3 days old.
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
