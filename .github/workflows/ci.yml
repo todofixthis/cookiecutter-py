@@ -28,7 +28,7 @@ jobs:
           # The generate matrix's newest. Reading `requires-python` from
           # pyproject.toml resolves to the latest CPython, which can outrun
           # dependency wheels.
-          python-version: "3.14"
+          python-version: "3.15"
       - name: Install dependencies
         run: uv sync --group ci
       - name: Run tests
@@ -48,7 +48,7 @@ jobs:
           # The generate matrix's newest. Reading `requires-python` from
           # pyproject.toml resolves to the latest CPython, which can outrun
           # dependency wheels.
-          python-version: "3.14"
+          python-version: "3.15"
       - name: Install dependencies
         run: uv sync --group ci
       - name: Type checking
