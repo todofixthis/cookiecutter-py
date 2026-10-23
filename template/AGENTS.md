@@ -45,6 +45,8 @@ uv run black --check .
 uv run make -C docs clean && uv run make -C docs html
 ```
 
+uv resolves only releases at least 3 days old (`exclude-newer` under `[tool.uv]` in `pyproject.toml`), so "latest" above means the latest that old. To take a newer release of one package, exempt it there with `exclude-newer-package = { <package> = false }`, and remove the exemption once the release is 3 days old.
+
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
 The phx plugin's ADR tool, for use where the skill isn't available. Renovate bumps these pins and the `adrs` CI job's together, matching each on its trailing `# X.Y.Z` comment (ADR 009 in todofixthis/cookiecutter-py) — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.

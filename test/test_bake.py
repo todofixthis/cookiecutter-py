@@ -131,6 +131,13 @@ def test_uv_trusts_system_certs(baked_project: Path) -> None:
     assert data["tool"]["uv"]["system-certs"] is True
 
 
+def test_uv_waits_for_releases_to_age(baked_project: Path) -> None:
+    """The generated project's uv resolves only releases at least 3 days old."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    assert data["tool"]["uv"]["exclude-newer"] == "3 days"
+
+
 def test_generates_expected_package_layout(baked_project: Path) -> None:
     """The generated package directory and its py.typed marker both exist."""
     package_dir = baked_project / "src" / "my_python_project"
@@ -338,9 +345,16 @@ def test_renovate_manages_adr_pin(baked_project: Path) -> None:
 
 
 def test_renovate_maintains_lock_file(baked_project: Path) -> None:
-    """Renovate refreshes ``uv.lock``, so transitive fixes arrive unpinned."""
+    """Renovate refreshes ``uv.lock`` and merges the refresh once CI passes."""
     config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
     assert config["lockFileMaintenance"]["enabled"] is True
+    assert config["lockFileMaintenance"]["automerge"] is True
+
+
+def test_renovate_waits_for_releases_to_age(baked_project: Path) -> None:
+    """Renovate raises a PyPI update only once uv's cooldown would allow it."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    assert "security:minimumReleaseAgePypi" in config["extends"]
 
 
 def read_release_skill(project: Path) -> str:

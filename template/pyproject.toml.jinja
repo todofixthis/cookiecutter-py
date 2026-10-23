@@ -119,3 +119,8 @@ runner = "uv-venv-lock-runner"
 keyring-provider = "subprocess"
 # Fix SSL errors when running in Leash containers
 system-certs = true
+# Resolve only releases at least 3 days old, so a broken or malicious release
+# is usually yanked before a lock refresh picks it up (ADR 013 in
+# todofixthis/cookiecutter-py). Exempt one package with
+# `exclude-newer-package = { <package> = false }`.
+exclude-newer = "3 days"

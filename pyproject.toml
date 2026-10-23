@@ -31,6 +31,8 @@ ci = [
 # This repo is a copier template, not a Python package — nothing here
 # gets built or published, so uv shouldn't try to.
 package = false
+# Resolve only releases at least 3 days old, as generated projects do (ADR 013).
+exclude-newer = "3 days"
 
 [tool.ruff]
 # template/ holds unrendered project files (`*.jinja`, and paths like
