@@ -102,6 +102,13 @@ Option 4 stays a possible later answer to edits the rule can't see, not a first 
     it made the edit and listed it under "Template candidates", in its final report since
     there was no PR. That run predates the commit-message home for the flag.
 
+  Those runs tested earlier drafts. Three cases were then re-run on the wording as
+  committed: the timeout case recommended the upstream change and offered the in-project
+  edit only as a choice made knowing it's a candidate, flagged in the commit message; the
+  dependency case added the dependency; and the go-ahead case made the edit, drafted the
+  "Template candidates" list for the commit message, and asked for it to be ported
+  verbatim, placement included, since it left the change uncommitted.
+
   No run exercised a candidate needed as a step towards another task. The runs loaded the
   session's user-level instructions as well as the project's, so they weren't clean-room
   agents.
