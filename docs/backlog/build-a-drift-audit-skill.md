@@ -18,9 +18,10 @@ shape under `docs/audits/`. It covers what copier and Renovate don't reach:
   cookiecutter-browser-plugin;
 - agent instructions diverging across repositories;
 - local edits to template-owned files in generated projects. Sort each into upstream or
-  project-only using the criteria in [`template/AGENTS.md`][]'s "Template-owned files" section,
-  which defines template ownership, the "right for every project?" test, seed files and
-  answer-derived values. Don't invent new criteria;
+  project-only using the criteria in the template-owned rule that `scripts/template_owned.py`
+  generates (ADR 014): its project-specific-reason test, seed files and answer-derived
+  values. Expect candidates a project's PR description or commit message listed under
+  "Template candidates"; an unlisted one is the drift to report. Don't invent new criteria;
 - repository settings, until something runs `terraform plan` for each repository on a
   schedule. The audit says only to run it once module v1 ships. The schedule condition comes
   from the #11 review.
@@ -71,5 +72,4 @@ recorded method, the next audit starts from scratch and its criteria differ.
 
 [ADR 008]: ../adr/008-propagate-template-changes-with-copier-and-renovate.md
 [audit]: ../audits/2026-10-10-drift-audit.md
-[`template/AGENTS.md`]: ../../template/AGENTS.md
 [todofixthis/cookiecutter-py#11]: https://github.com/todofixthis/cookiecutter-py/pull/11
