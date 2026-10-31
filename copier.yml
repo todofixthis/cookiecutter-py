@@ -60,12 +60,22 @@ pypi_project_name:
   type: str
   default: "phx-[[ github_project_name ]]"
 
-# The newest supported Python release; the template supports it and the two
-# before it (ADR 001, restated by ADR 008). Recorded rather than read from the
-# host interpreter, so `copier update` never moves a project's Python floor.
-python_version:
+# The newest Python release the template's policy supports (ADR 015). A
+# computed value, so every template release re-renders it in every project,
+# where the `python-policy` CI job compares it with `python_version`.
+python_policy:
   type: str
   default: "3.14"
+  when: false
+
+# The newest Python release this project supports; it supports the two before
+# it too (ADR 001, restated by ADR 008). Recorded rather than read from the
+# host interpreter, so `copier update` never moves a project's Python floor:
+# an agent session rotates it with the project's `rotate-python-versions`
+# skill (ADR 015).
+python_version:
+  type: str
+  default: "[[ python_policy ]]"
   # A block scalar, so YAML leaves the backslashes alone and Jinja's string
   # literal unescapes `\\.` to the regex's `\.`.
   validator: >-

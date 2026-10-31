@@ -7,7 +7,8 @@ description: Use when changing which Python versions todofixthis/cookiecutter-py
 
 todofixthis/cookiecutter-py has two Python settings:
 - **The generated range** is the three newest Python releases a generated project supports,
-  set by the `python_version` answer.
+  set by `copier.yml`'s `python_policy`, which new projects' `python_version` answer
+  defaults to.
 - **The harness floor** is the oldest Python cookiecutter-py's own tests run on.
 
 The harness floor must not exceed the oldest version in the generated range. CI's `generate`
@@ -16,10 +17,11 @@ leg. Rotate one setting at a time, and check that constraint before either.
 
 ## The generated range
 
-`python_version` is the newest supported release, and the template derives everything else
-from it (`requires-python`, tox, the CI matrix, the docs). Change three places together:
+`python_policy` is the newest supported release. A new project's `python_version` defaults
+to it, and the template derives everything else from that answer (`requires-python`, tox,
+the CI matrix, the docs). Change three places together:
 
-- **`copier.yml`:** `python_version`'s `default`.
+- **`copier.yml`:** `python_policy`'s `default`.
 - **`README.md`:** the default it quotes.
 - **`.github/workflows/ci.yml`:** the `generate` job's `python-version` matrix, which lists
   the new default and the two releases before it, each quoted so YAML keeps `3.20` a string.
@@ -41,10 +43,13 @@ once under the new newest version and once under the new oldest, each with `UV_P
 to that version for every `uv` command. Run `uv run pytest` too. If a dependency won't
 install under a version, stop and tell the maintainer rather than pinning around it.
 
-A released default reaches new projects only. `copier update --defaults`, which Renovate
-runs, keeps each project's recorded answer, so an existing project moves only by
-re-answering with `copier update --data python_version=X.Y`, which the generated projects'
-own `rotate-python-versions` skill does. Don't edit a generated project from here.
+A released policy reaches every project, but moves none of them (ADR 015).
+`copier update --defaults`, which Renovate runs, keeps each project's recorded
+`python_version`, and re-renders `python_policy`, so the project's `python-policy` CI job
+goes red on that update PR and stays red. The project moves only when an agent session
+there re-answers with `copier update --data python_version=X.Y` and removes compat code,
+which the generated projects' own `rotate-python-versions` skill does. Don't edit a
+generated project from here.
 
 ## The harness floor
 

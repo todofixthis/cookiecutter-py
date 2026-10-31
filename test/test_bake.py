@@ -13,7 +13,12 @@ import copier
 import pytest
 import yaml
 
-from .conftest import TEMPLATE_ROOT, release_template_change, update_project
+from .conftest import (
+    TEMPLATE_ROOT,
+    release_template_change,
+    run_python_policy_check,
+    update_project,
+)
 
 # Anything of this shape surviving in a baked file means copier's Jinja pass
 # missed it — the whole point of baking is that none of this remains. Template
@@ -183,12 +188,12 @@ def test_readthedocs_syncs_into_rtd_env(baked_project: Path) -> None:
 
 
 def test_rotate_skill_searches_hidden_dirs(baked_project: Path) -> None:
-    """Every rg command in the rotate skill passes --hidden to reach .github."""
+    """Every rg command in the rotate skill searching the whole tree passes --hidden."""
     skill = baked_project / ".agents" / "skills" / "rotate-python-versions" / "SKILL.md"
     rg_lines = [
         line
         for line in skill.read_text(encoding="utf-8").splitlines()
-        if line.lstrip().startswith("rg ")
+        if line.lstrip().startswith("rg ") and " . " in line
     ]
     assert rg_lines
     assert all("--hidden" in line for line in rg_lines), rg_lines
@@ -239,7 +244,7 @@ def test_project_rules_survive_update(
 
     release_template_change(
         template_repo,
-        ".agents/rules/project.md.jinja",
+        "template/.agents/rules/project.md.jinja",
         lambda text: text + "A line the template adds later.\n",
     )
 
@@ -291,20 +296,65 @@ def test_ci_job_names(baked_project: Path) -> None:
         "docs",
         "adrs",
         "gate",
+        "python-policy",
     }
 
 
 def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
-    """The ``gate`` job aggregates every other job and fails on a non-success."""
+    """The ``gate`` job depends on every other job and always runs."""
     jobs = load_ci_jobs(baked_project)
     gate = jobs["gate"]
     assert set(gate["needs"]) == set(jobs) - {"gate"}
     assert gate["if"] == "always()"
-    fail_conditions = [step.get("if", "") for step in gate["steps"]]
-    assert any(
-        all(result in condition for result in ("failure", "cancelled", "skipped"))
-        for condition in fail_conditions
+
+
+@pytest.mark.parametrize(
+    ("results", "exit_code"),
+    [
+        ({}, 0),
+        ({"python-policy": "failure"}, 0),
+        ({"lint": "failure"}, 1),
+        ({"test": "cancelled"}, 1),
+        ({"docs": "skipped"}, 1),
+        ({"python-policy": "skipped"}, 1),
+    ],
+)
+def test_gate_tolerates_only_a_python_policy_failure(
+    baked_project: Path, results: dict[str, str], exit_code: int
+) -> None:
+    """``gate`` fails on any non-success except ``python-policy`` failing."""
+    gate = load_ci_jobs(baked_project)["gate"]
+    needs = {job: {"result": results.get(job, "success")} for job in gate["needs"]}
+    (step,) = gate["steps"]
+    completed = subprocess.run(
+        ["bash", "-e", "-c", step["run"]],
+        capture_output=True,
+        check=False,
+        env={**os.environ, "NEEDS": json.dumps(needs)},
     )
+    assert completed.returncode == exit_code
+
+
+@pytest.mark.parametrize(
+    ("python_version", "exit_code"), [("3.13", 1), ("3.14", 0), ("3.15", 0)]
+)
+def test_python_policy_fails_only_behind_policy(
+    tmp_path: Path, python_version: str, exit_code: int
+) -> None:
+    """The ``python-policy`` job fails only when ``python_version`` lags the policy."""
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        tmp_path,
+        data={
+            "copyright_year": 2026,
+            "project_short_description": "x",
+            "python_version": python_version,
+        },
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    assert run_python_policy_check(tmp_path) == exit_code
 
 
 def test_ci_never_checks_template_drift(baked_project: Path) -> None:

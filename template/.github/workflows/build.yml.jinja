@@ -113,15 +113,43 @@ jobs:
       - name: Check ADRs
         run: uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@0725567cec6bab6a227c2a3d569e64c226c33a4e#subdirectory=skills/writing-adrs' phx-adr check # 8.1.0
 
+  # Fails while this project supports an older Python range than the
+  # template's policy, as a nudge to rotate with the `rotate-python-versions`
+  # skill, which also removes compat code no tool can (ADR 015 in
+  # todofixthis/cookiecutter-py). `gate` tolerates its failure, so it goes red
+  # on every PR until the rotation lands but never blocks a merge.
+  python-policy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Compare python_version with the template's policy
+        run: |
+          project="[[ python_version ]]"
+          policy="[[ python_policy ]]"
+          if [ "${project#*.}" -lt "${policy#*.}" ]; then
+            echo "::error::❌ python_version is ${project}, behind the template's policy of ${policy}: rotate with the rotate-python-versions skill."
+            exit 1
+          fi
+          echo "✅ python_version ${project} meets the template's policy of ${policy}."
+
   # The single required status check. Depending on every job here collapses
-  # their results into one, so branch protection requires only `gate`. A
+  # their results into one, so branch protection requires only `gate`. Every
+  # job must succeed, except that `python-policy` may fail, being a nudge. A
   # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   gate:
-    needs: [adrs, docs, lint, test, type-check]
+    needs: [adrs, docs, lint, python-policy, test, type-check]
     if: always()
     runs-on: ubuntu-latest
 
     steps:
       - name: Fail if any check did not succeed
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
-        run: exit 1
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          failed="$(jq -r 'to_entries[] | select(.value.result != "success") | select(.key != "python-policy" or .value.result != "failure") | "\(.key): \(.value.result)"' <<< "$NEEDS")"
+          if [ -n "$failed" ]; then
+            echo "❌ Checks that did not succeed:"
+            echo "$failed"
+            exit 1
+          fi
+          echo "✅ Every check succeeded."

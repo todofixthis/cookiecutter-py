@@ -8,6 +8,7 @@ from pathlib import Path
 
 import copier
 import pytest
+import yaml
 from plumbum import local
 
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
@@ -110,8 +111,8 @@ def committed_bake(template_repo: Path, tmp_path: Path) -> Path:
 def release_template_change(
     template_repo: Path, relative_path: str, edit: Callable[[str], str]
 ) -> None:
-    """Applies ``edit`` to a file under ``template/`` and tags it ``0.0.2``."""
-    path = template_repo / "template" / relative_path
+    """Applies ``edit`` to a file in ``template_repo`` and tags it ``0.0.2``."""
+    path = template_repo / relative_path
     path.write_text(edit(path.read_text(encoding="utf-8")), encoding="utf-8")
     subprocess.run(
         ["git", "commit", "--quiet", "--all", "-m", "0.0.2"],
@@ -128,3 +129,14 @@ def update_project(project: Path) -> list[str]:
     )
     # Read line by line rather than with PyYAML, which ships no type stubs.
     return (project / ".copier-answers.yml").read_text(encoding="utf-8").splitlines()
+
+
+def run_python_policy_check(project: Path) -> int:
+    """Runs the baked ``python-policy`` CI step as GitHub does; returns its exit code."""
+    workflow = yaml.safe_load(
+        (project / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+    )
+    (step,) = workflow["jobs"]["python-policy"]["steps"]
+    return subprocess.run(
+        ["bash", "-e", "-c", step["run"]], capture_output=True, check=False
+    ).returncode
