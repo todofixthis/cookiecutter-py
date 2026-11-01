@@ -2,7 +2,7 @@
 status: Accepted
 date: 2026-10-31
 scope: [.agents/skills/rotate-python-versions/, .github/workflows/, copier.yml, renovate.json, template/, test/]
-summary: Generate and update projects with copier, not cookiecutter, cruft or manual re-sync, using no copier unsafe features so Renovate's copier manager delivers each template release as a PR; the template's computed python_policy sets the Python range projects should support, each project's recorded python_version moves only when an agent session runs its rotate-python-versions skill, Renovate's Python updates are disabled, and a python-policy workflow outside gate fails while a project lags the policy, skipped on Renovate's lock-maintenance branch; the template is validated by baking a project and running its own lint, type-check, test and docs build.
+summary: Update projects with copier and Renovate's copier manager, not cruft or manual re-sync, using no copier unsafe features, and validate by baking a project and running its own checks; Python rotates only from an agent session in the project, never by Renovate, to the template's computed python_policy, with a python-policy workflow outside gate failing while a project lags, skipped on every Renovate branch but the template update.
 revisit-when: Renovate's copier manager stops opening PRs for template releases; a library needs a template feature copier treats as unsafe; a project's python-policy check stays red for more than three months; a Renovate PR in a project stops automerging because python-policy failed on it; Renovate gains a way to run an agent session on its update PRs.
 ---
 
@@ -60,14 +60,15 @@ are behind.
 release re-renders it in every project and no answer records it.
 `python_version` stays recorded and defaults to it. A `python-policy.yml`
 workflow compares the two rendered values and fails while the project is
-behind; it isn't part of `build.yml`, so `gate` doesn't need it, and it skips
-on Renovate's `renovate/lock-file-maintenance` branch. A Renovate rule disables
+behind; it isn't part of `build.yml`, so `gate` doesn't need it. It skips every
+branch under `renovate/` except the template-update one, whose name carries
+`cookiecutter-py` from the recorded `_src_path`. A Renovate rule disables
 updates to the `python` dependency, in generated projects and in this
 repository.
 
 **Cons:** The check stays red on every PR from the update that raises the policy
-until the rotation lands. A Renovate branch a project sets to automerge itself
-stalls while it lags, unless the project adds the same skip.
+until the rotation lands. The skip matches branch names, so a project that
+changes Renovate's `branchPrefix` loses it.
 **Risks:** A red that lasts trains the maintainer to ignore it.
 
 ### Option 3: A computed `python_version`
@@ -105,9 +106,11 @@ and Option 5 costs merges, automerges or the badge.
 The nudge is a failing check because a red check is what reaches the
 maintainer: it shows on the template-update PR they review anyway, and every
 later run they push notifies them. It is the one CI job that reports a project
-lagging the template, and it differs from the `cruft check` ADR 008 rejected:
-it reports only the Python policy, blocks no merge, and skips the branch whose
-merging depends on it.
+lagging the template, and it takes on the cost ADR 008 rejected the `cruft
+check` for: every PR goes red once the template releases. It accepts that for
+one value, the one only a session can move, and keeps the rest of that check's
+cost out: it blocks no merge, and Renovate's own PRs, which merge themselves
+only while no check has failed, skip it.
 
 Renovate's Python updates are disabled by dependency name rather than by file,
 so a new workflow, or another manager that reports `python`, is covered without
@@ -129,7 +132,9 @@ these constraints, each of which an update path depends on:
   never a computed variable**; computed values re-render on every update.
   `python_policy` is computed because it must follow the template, and
   `python_version`, `copyright_year` and `copyright_holder` are recorded
-  because they mustn't.
+  because they mustn't. `python_version` isn't read from the host interpreter
+  either: that needs an unsafe extension, and would move the floor whenever
+  Renovate's runner had a different Python.
 - **Symlinks are preserved** (`_preserve_symlinks: true`).
 - **Releases are bare semver tags** (`1.0.0`), matching phx-claude-siat's.
 - **Drift in template files shows as a Renovate PR, never as a CI job**, so a
@@ -139,7 +144,7 @@ these constraints, each of which an update path depends on:
 `test/` bakes the template with copier and checks the output, and CI bakes a
 project under every supported Python version and runs its own lint, type-check,
 test and docs build. Projects support the policy's three most recent minor
-releases, as ADR 001 set out.
+releases. Both restate ADRs 004 and 001, which stay superseded.
 
 ## Consequences
 

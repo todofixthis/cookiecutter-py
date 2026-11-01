@@ -38,9 +38,9 @@ if it doesn't, stop and tell the maintainer, since docs builds would fail with C
 Rotating the range up leaves the harness floor valid. Moving it down, so that its oldest
 version falls below the floor, needs the harness floor lowered first.
 
-Then check the result as CI does, using the bake commands in AGENTS.md's Commands section,
-once under the new newest version and once under the new oldest, each with `UV_PYTHON` set
-to that version for every `uv` command. Run `uv run pytest` too. If a dependency won't
+Then check the result as CI does, using the bake commands in the Commands section of
+cookiecutter-py's root AGENTS.md, once under the new newest version and once under the new
+oldest, each with `UV_PYTHON` set to that version for every `uv` command. Run `uv run pytest` too. If a dependency won't
 install under a version, stop and tell the maintainer rather than pinning around it.
 
 A released policy reaches every project, but moves none of them (ADR 015).
@@ -55,8 +55,8 @@ generated project from here.
 
 The root `pyproject.toml`'s `requires-python` and `[tool.black] target-version`, and
 `uv.lock`, describe the harness, not the generated range. CI's `test` and `type-check` jobs
-install the newest Python `requires-python` allows, so the floor is the only version they
-pin. Change the floor only when the maintainer asks, and only to a version no higher than the
+pin the generated range's newest, not the floor, so changing the floor leaves them alone.
+Change the floor only when the maintainer asks, and only to a version no higher than the
 generated range's oldest. Change all three together:
 
 - `requires-python` to `>=X.Y`;

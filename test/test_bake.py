@@ -313,15 +313,21 @@ def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
     )
 
 
-def test_python_policy_skips_lock_maintenance(baked_project: Path) -> None:
-    """``python-policy`` skips Renovate's lock-refresh branch, so automerge isn't held."""
+def test_python_policy_skips_renovate_but_template_updates(
+    baked_project: Path,
+) -> None:
+    """``python-policy`` runs on branches, skipping Renovate's but template updates."""
     workflow = yaml.safe_load(
         (baked_project / ".github" / "workflows" / "python-policy.yml").read_text(
             encoding="utf-8"
         )
     )
-    job = workflow["jobs"]["python-policy"]
-    assert job["if"] == "github.ref_name != 'renovate/lock-file-maintenance'"
+    # PyYAML reads the bare key `on` as the boolean True.
+    assert workflow[True] == {"push": {"branches": ["**"]}}
+    assert workflow["jobs"]["python-policy"]["if"] == (
+        "${{ !startsWith(github.ref_name, 'renovate/')"
+        " || contains(github.ref_name, 'cookiecutter-py') }}"
+    )
 
 
 @pytest.mark.parametrize(("minor_offset", "exit_code"), [(-1, 1), (0, 0), (1, 0)])

@@ -5,18 +5,20 @@
 # and leaves build.yml's README badge alone.
 name: Python policy
 
+# Branches only, so a release tag on a lagging project doesn't go red.
 on:
-  push: ~
+  push:
+    branches: ["**"]
 
 permissions: {}
 
 jobs:
   python-policy:
-    # Renovate merges its own PRs only once every check passes, and counts a
-    # skipped check as passing. Skipping on its lock-maintenance branch keeps
-    # the weekly lock refresh merging while the project lags. A Renovate branch
-    # this project sets to automerge needs the same skip.
-    if: github.ref_name != 'renovate/lock-file-maintenance'
+    # Renovate automerges a PR only once no check has failed, and counts a
+    # skipped check as passing, so this skips every Renovate branch (its lock
+    # refresh, and any this project sets to automerge) but the template-update
+    # one, which a person reviews and whose name carries the template's.
+    if: ${{ !startsWith(github.ref_name, 'renovate/') || contains(github.ref_name, 'cookiecutter-py') }}
     runs-on: ubuntu-latest
 
     steps:
