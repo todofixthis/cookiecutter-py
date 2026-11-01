@@ -1,0 +1,34 @@
+# Fails while this project supports an older Python range than the template's
+# policy, as a nudge to rotate with the `rotate-python-versions` skill, which
+# also removes compat code no tool can (ADR 015 in todofixthis/cookiecutter-py).
+# A workflow of its own, outside build.yml's `gate`, so it never blocks a merge
+# and leaves build.yml's README badge alone.
+name: Python policy
+
+on:
+  push: ~
+
+permissions: {}
+
+jobs:
+  python-policy:
+    # Renovate merges its own PRs only once every check passes, and counts a
+    # skipped check as passing. Skipping on its lock-maintenance branch keeps
+    # the weekly lock refresh merging while the project lags. A Renovate branch
+    # this project sets to automerge needs the same skip.
+    if: github.ref_name != 'renovate/lock-file-maintenance'
+    runs-on: ubuntu-latest
+
+    steps:
+      # Compares minor versions only, as the template's range never crosses a
+      # major version. Negating `-ge` fails on a value that isn't a number,
+      # where `-lt` would pass it.
+      - name: Compare python_version with the template's policy
+        run: |
+          project="[[ python_version ]]"
+          policy="[[ python_policy ]]"
+          if ! [ "${project#*.}" -ge "${policy#*.}" ]; then
+            echo "::error::❌ python_version is ${project}, behind the template's policy of ${policy}: rotate with the rotate-python-versions skill."
+            exit 1
+          fi
+          echo "✅ python_version ${project} meets the template's policy of ${policy}."

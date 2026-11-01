@@ -5,6 +5,7 @@ from pathlib import Path
 import yaml
 
 from .conftest import (
+    PYTHON_POLICY,
     TEMPLATE_ROOT,
     release_template_change,
     run_python_policy_check,
@@ -14,10 +15,6 @@ from .conftest import (
 # Questions the maintainer must answer on every bake; the template can't guess
 # a copyright year or a one-line description.
 QUESTIONS_WITHOUT_DEFAULT = {"copyright_year", "project_short_description"}
-
-PYTHON_POLICY = yaml.safe_load(
-    (TEMPLATE_ROOT / "copier.yml").read_text(encoding="utf-8")
-)["python_policy"]["default"]
 
 
 def test_update_applies_template_change(

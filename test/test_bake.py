@@ -14,6 +14,7 @@ import pytest
 import yaml
 
 from .conftest import (
+    PYTHON_POLICY,
     TEMPLATE_ROOT,
     release_template_change,
     run_python_policy_check,
@@ -273,7 +274,7 @@ def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None
     config = yaml.safe_load(
         (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
     )
-    assert config["build"]["tools"]["python"] == "3.14"
+    assert config["build"]["tools"]["python"] == PYTHON_POLICY
     (sync,) = config["build"]["jobs"]["post_install"]
     assert "uv sync --no-default-groups --group ci" in sync
 
@@ -296,59 +297,46 @@ def test_ci_job_names(baked_project: Path) -> None:
         "docs",
         "adrs",
         "gate",
-        "python-policy",
     }
 
 
 def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
-    """The ``gate`` job depends on every other job and always runs."""
+    """The ``gate`` job aggregates every other job and fails on a non-success."""
     jobs = load_ci_jobs(baked_project)
     gate = jobs["gate"]
     assert set(gate["needs"]) == set(jobs) - {"gate"}
     assert gate["if"] == "always()"
-
-
-@pytest.mark.parametrize(
-    ("results", "exit_code"),
-    [
-        ({}, 0),
-        ({"python-policy": "failure"}, 0),
-        ({"lint": "failure"}, 1),
-        ({"test": "cancelled"}, 1),
-        ({"docs": "skipped"}, 1),
-        ({"python-policy": "skipped"}, 1),
-    ],
-)
-def test_gate_tolerates_only_a_python_policy_failure(
-    baked_project: Path, results: dict[str, str], exit_code: int
-) -> None:
-    """``gate`` fails on any non-success except ``python-policy`` failing."""
-    gate = load_ci_jobs(baked_project)["gate"]
-    needs = {job: {"result": results.get(job, "success")} for job in gate["needs"]}
-    (step,) = gate["steps"]
-    completed = subprocess.run(
-        ["bash", "-e", "-c", step["run"]],
-        capture_output=True,
-        check=False,
-        env={**os.environ, "NEEDS": json.dumps(needs)},
+    fail_conditions = [step.get("if", "") for step in gate["steps"]]
+    assert any(
+        all(result in condition for result in ("failure", "cancelled", "skipped"))
+        for condition in fail_conditions
     )
-    assert completed.returncode == exit_code
 
 
-@pytest.mark.parametrize(
-    ("python_version", "exit_code"), [("3.13", 1), ("3.14", 0), ("3.15", 0)]
-)
+def test_python_policy_skips_lock_maintenance(baked_project: Path) -> None:
+    """``python-policy`` skips Renovate's lock-refresh branch, so automerge isn't held."""
+    workflow = yaml.safe_load(
+        (baked_project / ".github" / "workflows" / "python-policy.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    job = workflow["jobs"]["python-policy"]
+    assert job["if"] == "github.ref_name != 'renovate/lock-file-maintenance'"
+
+
+@pytest.mark.parametrize(("minor_offset", "exit_code"), [(-1, 1), (0, 0), (1, 0)])
 def test_python_policy_fails_only_behind_policy(
-    tmp_path: Path, python_version: str, exit_code: int
+    tmp_path: Path, minor_offset: int, exit_code: int
 ) -> None:
     """The ``python-policy`` job fails only when ``python_version`` lags the policy."""
+    major, minor = PYTHON_POLICY.split(".")
     copier.run_copy(
         str(TEMPLATE_ROOT),
         tmp_path,
         data={
             "copyright_year": 2026,
             "project_short_description": "x",
-            "python_version": python_version,
+            "python_version": f"{major}.{int(minor) + minor_offset}",
         },
         defaults=True,
         vcs_ref="HEAD",

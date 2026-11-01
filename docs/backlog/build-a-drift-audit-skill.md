@@ -35,8 +35,9 @@ recorded method, the next audit starts from scratch and its criteria differ.
 
 ## What shapes it
 
-- **No CI check.** [ADR 008][] decides that drift shows as a Renovate PR, never as a CI job.
-  Run the skill on demand, before a template release, say.
+- **No CI check.** [ADR 015][] decides that drift in template files shows as a Renovate PR,
+  never as a CI job; its one exception, the Python-policy check, doesn't cover this. Run the
+  skill on demand, before a template release, say.
 - **The re-bake diff is a report, not a gate.** For each generated library, re-bake at the
   `_commit` its `.copier-answers.yml` records, with its recorded answers, and diff the result
   against the library:
@@ -70,6 +71,6 @@ recorded method, the next audit starts from scratch and its criteria differ.
   checked", and that run still counts.
 - No CI job is added for drift.
 
-[ADR 008]: ../adr/008-propagate-template-changes-with-copier-and-renovate.md
+[ADR 015]: ../adr/015-propagate-template-changes-with-copier-and-rotate-python-from-agent-sessions.md
 [audit]: ../audits/2026-10-10-drift-audit.md
 [todofixthis/cookiecutter-py#11]: https://github.com/todofixthis/cookiecutter-py/pull/11

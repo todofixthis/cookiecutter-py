@@ -8,7 +8,7 @@ A generated project's Renovate and this repository's both bump the same lines in
 template-owned files: dependency bounds in `template/pyproject.toml.jinja`, action SHAs in
 `template/.github/workflows/build.yml.jinja`, and the phx-adr pins there and in
 `template/AGENTS.md`. When the two land on different versions, the template-update PR
-that `copier update` opens (ADR 008) conflicts on those lines. When they land on the same
+that `copier update` opens (ADR 015) conflicts on those lines. When they land on the same
 version, it merges cleanly. class-registry met it on adoption, before any update PR: its
 `develop` had setup-uv v10.3.3 while template 1.1.0 pinned v10.3.2, and its adoption
 rebase conflicted on that workflow. It kept v10.3.3 by hand.

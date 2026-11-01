@@ -13,6 +13,12 @@ from plumbum import local
 
 TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
 
+# The newest Python the template supports, read from `copier.yml` so a
+# rotation changes one place, not every test that names a version.
+PYTHON_POLICY: str = yaml.safe_load(
+    (TEMPLATE_ROOT / "copier.yml").read_text(encoding="utf-8")
+)["python_policy"]["default"]
+
 
 @pytest.fixture(autouse=True)
 def isolate_git_config(
@@ -134,7 +140,9 @@ def update_project(project: Path) -> list[str]:
 def run_python_policy_check(project: Path) -> int:
     """Runs the baked ``python-policy`` CI step as GitHub does; returns its exit code."""
     workflow = yaml.safe_load(
-        (project / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+        (project / ".github" / "workflows" / "python-policy.yml").read_text(
+            encoding="utf-8"
+        )
     )
     (step,) = workflow["jobs"]["python-policy"]["steps"]
     return subprocess.run(
