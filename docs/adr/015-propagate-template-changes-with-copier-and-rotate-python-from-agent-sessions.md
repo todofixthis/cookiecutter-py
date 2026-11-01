@@ -2,7 +2,7 @@
 status: Accepted
 date: 2026-10-31
 scope: [.agents/skills/rotate-python-versions/, .github/workflows/, copier.yml, renovate.json, template/, test/]
-summary: Update projects with copier and Renovate's copier manager, not cruft or manual re-sync, using no copier unsafe features, and validate by baking a project and running its own checks; Python rotates only from an agent session in the project, never by Renovate, to the template's computed python_policy, with a python-policy workflow outside gate failing while a project lags, skipped on every Renovate branch but the template update.
+summary: Update projects with copier and Renovate's copier manager, not cruft or manual re-sync, using no copier unsafe features, with drift shown as Renovate PRs, not CI jobs, and validate by baking a project under every supported Python and running its own checks; projects support the three most recent minor Python releases through a recorded python_version, never computed, which only an agent session in the project rotates to the template's computed python_policy, with Renovate's python dependency updates disabled; the one CI exception is a python-policy workflow outside gate, failing while a project lags and skipped on every Renovate branch but the template update.
 revisit-when: Renovate's copier manager stops opening PRs for template releases; a library needs a template feature copier treats as unsafe; a project's python-policy check stays red for more than three months; a Renovate PR in a project stops automerging because python-policy failed on it; Renovate gains a way to run an agent session on its update PRs.
 ---
 
@@ -68,7 +68,8 @@ repository.
 
 **Cons:** The check stays red on every PR from the update that raises the policy
 until the rotation lands. The skip matches branch names, so a project that
-changes Renovate's `branchPrefix` loses it.
+overrides Renovate's branch naming (`branchPrefix`, a `groupName` covering the
+template, `hashedBranchLength`) loses it.
 **Risks:** A red that lasts trains the maintainer to ignore it.
 
 ### Option 3: A computed `python_version`
