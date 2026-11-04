@@ -10,7 +10,7 @@ A [copier](https://copier.readthedocs.io/) template for new Python projects, wir
 uvx "copier>=9,<10" copy https://github.com/todofixthis/cookiecutter-py.git my-python-project
 ```
 
-copier prompts for each answer; all but the short description and copyright year have a default. `python_version` (default `3.14`) is the newest Python release the project supports, along with the two before it. copier records the answers in `.copier-answers.yml`, so a later template release can reach the project as a Renovate PR. Use the full URL, not the `gh:` shorthand: copier records the source verbatim, and Renovate can't resolve `gh:`.
+copier prompts for each answer; all but the short description and copyright year have a default. `python_version` (default `3.14`, the template's `python_policy`) is the newest Python release the project supports, along with the two before it. A later release that raises the policy turns the project's non-blocking `python-policy` CI job red until an agent session rotates it (ADR 015). copier records the answers in `.copier-answers.yml`, so a later template release can reach the project as a Renovate PR. Use the full URL, not the `gh:` shorthand: copier records the source verbatim, and Renovate can't resolve `gh:`.
 
 ## After creating the GitHub repo
 

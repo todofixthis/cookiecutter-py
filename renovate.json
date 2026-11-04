@@ -33,6 +33,13 @@
     "description": "Refresh uv.lock weekly, merging once CI passes, so transitive dependencies reach the harness without a direct pin, as the template's projects do (ADR 013).",
     "enabled": true
   },
+  "packageRules": [
+    {
+      "description": "Never bump Python: CI's versions follow copier.yml's python_policy, which the rotate-python-versions skill moves (ADR 015).",
+      "enabled": false,
+      "matchDepNames": ["python"]
+    }
+  ],
   "pep621": {
     "managerFilePatterns": [
       "/(^|/)pyproject\\.toml$/",

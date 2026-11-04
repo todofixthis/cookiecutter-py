@@ -13,7 +13,13 @@ import copier
 import pytest
 import yaml
 
-from .conftest import TEMPLATE_ROOT, release_template_change, update_project
+from .conftest import (
+    PYTHON_POLICY,
+    TEMPLATE_ROOT,
+    release_template_change,
+    run_python_policy_check,
+    update_project,
+)
 
 # Anything of this shape surviving in a baked file means copier's Jinja pass
 # missed it — the whole point of baking is that none of this remains. Template
@@ -183,12 +189,12 @@ def test_readthedocs_syncs_into_rtd_env(baked_project: Path) -> None:
 
 
 def test_rotate_skill_searches_hidden_dirs(baked_project: Path) -> None:
-    """Every rg command in the rotate skill passes --hidden to reach .github."""
+    """Every rg command in the rotate skill searching the whole tree passes --hidden."""
     skill = baked_project / ".agents" / "skills" / "rotate-python-versions" / "SKILL.md"
     rg_lines = [
         line
         for line in skill.read_text(encoding="utf-8").splitlines()
-        if line.lstrip().startswith("rg ")
+        if line.lstrip().startswith("rg ") and " . " in line
     ]
     assert rg_lines
     assert all("--hidden" in line for line in rg_lines), rg_lines
@@ -239,7 +245,7 @@ def test_project_rules_survive_update(
 
     release_template_change(
         template_repo,
-        ".agents/rules/project.md.jinja",
+        "template/.agents/rules/project.md.jinja",
         lambda text: text + "A line the template adds later.\n",
     )
 
@@ -268,7 +274,7 @@ def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None
     config = yaml.safe_load(
         (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
     )
-    assert config["build"]["tools"]["python"] == "3.14"
+    assert config["build"]["tools"]["python"] == PYTHON_POLICY
     (sync,) = config["build"]["jobs"]["post_install"]
     assert "uv sync --no-default-groups --group ci" in sync
 
@@ -305,6 +311,44 @@ def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
         all(result in condition for result in ("failure", "cancelled", "skipped"))
         for condition in fail_conditions
     )
+
+
+def test_python_policy_skips_renovate_but_template_updates(
+    baked_project: Path,
+) -> None:
+    """``python-policy`` runs on branches, skipping Renovate's but template updates."""
+    workflow = yaml.safe_load(
+        (baked_project / ".github" / "workflows" / "python-policy.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    # PyYAML reads the bare key `on` as the boolean True.
+    assert workflow[True] == {"push": {"branches": ["**"]}}
+    assert workflow["jobs"]["python-policy"]["if"] == (
+        "${{ !startsWith(github.ref_name, 'renovate/')"
+        " || contains(github.ref_name, 'cookiecutter-py') }}"
+    )
+
+
+@pytest.mark.parametrize(("minor_offset", "exit_code"), [(-1, 1), (0, 0), (1, 0)])
+def test_python_policy_fails_only_behind_policy(
+    tmp_path: Path, minor_offset: int, exit_code: int
+) -> None:
+    """The ``python-policy`` job fails only when ``python_version`` lags the policy."""
+    major, minor = PYTHON_POLICY.split(".")
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        tmp_path,
+        data={
+            "copyright_year": 2026,
+            "project_short_description": "x",
+            "python_version": f"{major}.{int(minor) + minor_offset}",
+        },
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    assert run_python_policy_check(tmp_path) == exit_code
 
 
 def test_ci_never_checks_template_drift(baked_project: Path) -> None:

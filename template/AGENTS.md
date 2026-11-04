@@ -8,7 +8,7 @@ Before writing code, check:
 
 ## Template-owned files
 
-This project is generated from the copier template `todofixthis/cookiecutter-py`; `.copier-answers.yml` records which release, and each release reaches this project as a Renovate PR running `copier update` (that repo's ADR 008). Before changing any file, check whether `.agents/rules/template-owned.md` lists it, and if so follow that rule. Claude Code loads the rule when you read a listed file; in another harness, read it yourself.
+This project is generated from the copier template `todofixthis/cookiecutter-py`; `.copier-answers.yml` records which release, and each release reaches this project as a Renovate PR running `copier update` (that repo's ADR 015). Before changing any file, check whether `.agents/rules/template-owned.md` lists it, and if so follow that rule. Claude Code loads the rule when you read a listed file; in another harness, read it yourself.
 
 ## Architecture Decision Records
 
