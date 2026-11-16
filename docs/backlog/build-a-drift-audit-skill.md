@@ -18,9 +18,10 @@ shape under `docs/audits/`. It covers what copier and Renovate don't reach:
   cookiecutter-browser-plugin;
 - agent instructions diverging across repositories;
 - local edits to template-owned files in generated projects. Sort each into upstream or
-  project-only using the criteria in [`template/AGENTS.md`][]'s "Template-owned files" section,
-  which defines template ownership, the "right for every project?" test, seed files and
-  answer-derived values. Don't invent new criteria;
+  project-only using the criteria in the template-owned rule that `scripts/template_owned.py`
+  generates (ADR 014): its project-specific-reason test, seed files and answer-derived
+  values. Expect candidates a project's PR description or commit message listed under
+  "Template candidates"; an unlisted one is the drift to report. Don't invent new criteria;
 - repository settings, until something runs `terraform plan` for each repository on a
   schedule. The audit says only to run it once module v1 ships. The schedule condition comes
   from the #11 review.
@@ -34,8 +35,9 @@ recorded method, the next audit starts from scratch and its criteria differ.
 
 ## What shapes it
 
-- **No CI check.** [ADR 008][] decides that drift shows as a Renovate PR, never as a CI job.
-  Run the skill on demand, before a template release, say.
+- **No CI check.** [ADR 015][] decides that drift in template files shows as a Renovate PR,
+  never as a CI job; its one exception, the Python-policy check, doesn't cover this. Run the
+  skill on demand, before a template release, say.
 - **The re-bake diff is a report, not a gate.** For each generated library, re-bake at the
   `_commit` its `.copier-answers.yml` records, with its recorded answers, and diff the result
   against the library:
@@ -69,7 +71,6 @@ recorded method, the next audit starts from scratch and its criteria differ.
   checked", and that run still counts.
 - No CI job is added for drift.
 
-[ADR 008]: ../adr/008-propagate-template-changes-with-copier-and-renovate.md
+[ADR 015]: ../adr/015-propagate-template-changes-with-copier-and-rotate-python-from-agent-sessions.md
 [audit]: ../audits/2026-10-10-drift-audit.md
-[`template/AGENTS.md`]: ../../template/AGENTS.md
 [todofixthis/cookiecutter-py#11]: https://github.com/todofixthis/cookiecutter-py/pull/11
