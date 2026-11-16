@@ -484,6 +484,7 @@ def test_without_docs_site_pyproject_drops_sphinx(
     sdist = data["tool"]["hatch"]["build"]["targets"]["sdist"]
     assert "docs" not in sdist["include"]
     assert "exclude" not in sdist
+    assert "exclude" not in data["tool"]["hatch"]["build"]["targets"]["wheel"]
 
 
 def test_without_docs_site_documentation_url(baked_without_docs_site: Path) -> None:

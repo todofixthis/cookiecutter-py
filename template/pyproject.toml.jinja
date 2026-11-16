@@ -101,7 +101,9 @@ exclude = ["docs/_build"]
 
 [tool.hatch.build.targets.wheel]
 include = ["src/[[ package_name ]]"]
+[%- if docs_site %]
 exclude = ["docs/_build"]
+[%- endif %]
 
 [tool.hatch.build.targets.wheel.sources]
 "src/[[ package_name ]]" = "[[ package_name ]]"

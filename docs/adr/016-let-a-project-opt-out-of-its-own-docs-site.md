@@ -96,7 +96,8 @@ its condition in prose rather than becoming a rendered file.
 - A template change touching docs must keep the no variant right: the bake
   tests and CI's `generate` job cover both answers. Tests fail when a no bake's
   `docs/` holds anything but `adr/`, or when a file other than AGENTS.md names
-  the docs build, a Sphinx page, the toctree or the ReadTheDocs slug.
+  the docs build, the index or conf page, the toctree or the default
+  ReadTheDocs slug.
 - `scripts/template_owned.py` wraps each conditional file's entry, in the
   rule's `paths:` and its seed list, in the same condition, so a project never
   lists a file it lacks ([ADR 012][]); `SEED_FILES` and this repo's AGENTS.md
