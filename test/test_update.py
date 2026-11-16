@@ -1,7 +1,9 @@
 """Proves a template release reaches an already-baked project via copier update."""
 
+import subprocess
 from pathlib import Path
 
+import copier
 import yaml
 
 from .conftest import (
@@ -14,7 +16,11 @@ from .conftest import (
 
 # Questions the maintainer must answer on every bake; the template can't guess
 # a copyright year or a one-line description.
-QUESTIONS_WITHOUT_DEFAULT = {"copyright_year", "project_short_description"}
+QUESTIONS_WITHOUT_DEFAULT = {
+    "copyright_year",
+    "documentation_url",
+    "project_short_description",
+}
 
 
 def test_update_applies_template_change(
@@ -68,3 +74,41 @@ def test_every_question_has_default_or_is_documented() -> None:
         and "default" not in question
     }
     assert missing == QUESTIONS_WITHOUT_DEFAULT
+
+
+def test_update_keeps_a_project_without_docs_site(
+    template_repo: Path, tmp_path: Path
+) -> None:
+    """A release reaching a no-docs-site project keeps its answer and leaves the
+    Sphinx files out."""
+    project = tmp_path / "no-docs"
+    copier.run_copy(
+        str(template_repo),
+        project,
+        data={
+            "copyright_year": 2026,
+            "docs_site": False,
+            "documentation_url": "https://example.com/docs",
+            "project_short_description": "x",
+        },
+        defaults=True,
+        vcs_ref="0.0.1",
+        unsafe=False,
+    )
+    for args in (
+        ["init", "--quiet"],
+        ["add", "--all"],
+        ["commit", "--quiet", "-m", "Bake"],
+    ):
+        subprocess.run(["git", *args], check=True, cwd=project)
+    release_template_change(
+        template_repo, "template/README.rst.jinja", lambda text: text + "\nNew.\n"
+    )
+
+    answers = update_project(project)
+
+    assert "_commit: 0.0.2" in answers
+    assert "docs_site: false" in answers
+    assert "documentation_url: https://example.com/docs" in answers
+    assert not (project / "docs" / "conf.py").exists()
+    assert not (project / ".readthedocs.yaml").exists()

@@ -3,8 +3,7 @@ status: Archived
 date: 2026-09-10
 archived-because: Comments above autosectionlabel_prefix_document in docs/conf.py and above fail_on_warning in .readthedocs.yaml each name this decision, met while either is being edited.
 scope:
-  - template/docs/conf.py.jinja
-  - template/.readthedocs.yaml.jinja
+  - template/
 summary: Enable sphinx.ext.autosectionlabel with autosectionlabel_prefix_document = True in generated projects' docs, not its default unprefixed labels.
 revisit-when: A generated project's docs grow large enough to have collided under the default (unprefixed) setting, and prefixing has proven not to be worth its extra verbosity in practice.
 ---

@@ -37,6 +37,14 @@ copyright_year:
   type: int
   validator: "[% if copyright_year < 1000 or copyright_year > 9999 %]Must be a 4-digit year[% endif %]"
 
+# Whether this project publishes its own Sphinx site on ReadTheDocs. Answer
+# no where its docs live elsewhere, as filters-iso's live in filters' docs:
+# no `docs/` Sphinx files, `.readthedocs.yaml`, `docs` CI job or `docs_build`
+# hook, and `documentation_url` names where they are instead (ADR 016).
+docs_site:
+  type: bool
+  default: true
+
 github_username:
   type: str
   default: todofixthis
@@ -48,6 +56,13 @@ project_name:
 github_project_name:
   type: str
   default: "[[ project_name.lower().replace(' ', '-') ]]"
+
+# Where this project's docs live, when it publishes no site of its own. No
+# default: only the project knows, and a default pointing at its own README
+# would send readers in a circle.
+documentation_url:
+  type: str
+  when: "[[ not docs_site ]]"
 
 package_name:
   type: str
@@ -101,6 +116,7 @@ python_minor:
 # those two.
 readthedocs_slug:
   type: str
+  when: "[[ docs_site ]]"
   default: "[[ pypi_project_name | regex_replace('^phx-', '') ]]"
 
 # Seeds `__version__`; without it hatchling's dynamic version renders empty.

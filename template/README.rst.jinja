@@ -1,7 +1,9 @@
 .. image:: https://github.com/[[ github_username ]]/[[ github_project_name ]]/actions/workflows/build.yml/badge.svg
    :target: https://github.com/[[ github_username ]]/[[ github_project_name ]]/actions/workflows/build.yml
+[%- if docs_site %]
 .. image:: https://readthedocs.org/projects/[[ readthedocs_slug ]]/badge/?version=latest
    :target: http://[[ readthedocs_slug ]].readthedocs.io/
+[%- endif %]
 
 [[ project_name ]]
 [[ '=' * project_name|length ]]
@@ -64,6 +66,7 @@ If you just want to run type checking in the current virtualenv (using
 
 Documentation
 -------------
+[%- if docs_site %]
 To build the documentation locally:
 
 #. Switch to the ``docs`` directory::
@@ -73,6 +76,9 @@ To build the documentation locally:
 #. Build the documentation::
 
     uv run make html
+[%- else %]
+Documentation is available at [[ documentation_url ]].
+[%- endif %]
 
 Releases
 --------

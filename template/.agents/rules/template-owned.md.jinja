@@ -4,8 +4,8 @@ paths:
   - ".agents/rules/testing.md"
   - ".agents/skills/release/SKILL.md"
   - ".agents/skills/rotate-python-versions/SKILL.md"
-  - ".autohooks/docs_build.py"
-  - ".claude/rules/template-owned.md"
+[% if docs_site %]  - ".autohooks/docs_build.py"
+[% endif %]  - ".claude/rules/template-owned.md"
   - ".claude/rules/testing.md"
   - ".claude/settings.json"
   - ".claude/skills/release/SKILL.md"
@@ -14,13 +14,13 @@ paths:
   - ".github/workflows/build.yml"
   - ".github/workflows/python-policy.yml"
   - ".gitignore"
-  - ".readthedocs.yaml"
-  - "AGENTS.md"
+[% if docs_site %]  - ".readthedocs.yaml"
+[% endif %]  - "AGENTS.md"
   - "CLAUDE.md"
   - "LICENCE.txt"
-  - "docs/Makefile"
-  - "docs/conf.py"
-  - "pyproject.toml"
+[% if docs_site %]  - "docs/Makefile"
+[% endif %][% if docs_site %]  - "docs/conf.py"
+[% endif %]  - "pyproject.toml"
   - "renovate.json"
   - "src/[[ package_name ]]/py.typed"
 ---
@@ -37,9 +37,9 @@ The template also writes seed files for this project to replace:
 
 - `README.rst`
 - `docs/adr/INDEX.md`
-- `docs/api.rst`
-- `docs/index.rst`
-- `src/[[ package_name ]]/__init__.py`
+[% if docs_site %]- `docs/api.rst`
+[% endif %][% if docs_site %]- `docs/index.rst`
+[% endif %]- `src/[[ package_name ]]/__init__.py`
 - `test/__init__.py`
 - `test/test_placeholder.py`
 

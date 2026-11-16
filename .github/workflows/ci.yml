@@ -67,6 +67,12 @@ jobs:
           - "3.12"
           - "3.13"
           - "3.14"
+        docs-site: [true]
+        # A project with no docs site of its own differs only in files, not in
+        # Python support, so one leg covers it (ADR 016).
+        include:
+          - python-version: "3.14"
+            docs-site: false
 
     steps:
       - name: Clone repo
@@ -88,7 +94,7 @@ jobs:
       - name: Bake a project with default answers
         env:
           UV_PYTHON: ${{ matrix.python-version }}
-        run: uv run copier copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked/my-python-project
+        run: uv run copier copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x --data docs_site=${{ matrix.docs-site }} --data documentation_url=https://example.com/docs . /tmp/baked/my-python-project
       # UV_PYTHON runs the generated project's environment, and so every step
       # below, under the matrix leg's interpreter.
       - name: Install the generated project's dependencies
@@ -117,6 +123,7 @@ jobs:
         run: uv run pytest
         working-directory: /tmp/baked/my-python-project
       - name: Build the generated project's docs
+        if: matrix.docs-site
         env:
           UV_PYTHON: ${{ matrix.python-version }}
         run: |
