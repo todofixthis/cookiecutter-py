@@ -46,9 +46,9 @@ when they render empty; drops the `docs` job from `build.yml` and `gate`, the
 `docs_build` hook and Sphinx from `pyproject.toml`; and asks
 `documentation_url` for the `Documentation` URL in place of
 `readthedocs_slug`. Docs instructions elsewhere become conditional too:
-Jinja blocks in the README and release skill, and prose naming the condition
-("where `.readthedocs.yaml` exists") in AGENTS.md and the rotate-python-versions
-skill, which aren't rendered. A no project keeps migration guides as
+Jinja blocks in the README and the release and rotate-python-versions skills,
+and prose naming the condition ("where `.readthedocs.yaml` exists") in
+AGENTS.md, which isn't rendered. A no project keeps migration guides as
 `docs/upgrading_to_v<major>.rst`, linked from its README and read on GitHub.
 
 **Pros:** Existing projects keep their sites, since `--defaults` answers yes

@@ -11,7 +11,7 @@ The template sets the target: CI's `python-policy` job fails while `python_versi
 
 ## Before changing anything
 
-Add a version only once it has a final release. Run `uv python list X.Y --only-downloads`: if every match carries an `a`, `b` or `rc` suffix (e.g. `cpython-3.15.0rc2`), the version isn't final, so ask the user how to proceed. Where the project has its own docs site (`.readthedocs.yaml` exists), ReadTheDocs builds on the newest supported version too, so it must also list X.Y under `build.tools.python` in its [config-file reference](https://docs.readthedocs.io/en/stable/config-file/v2.html#build-tools-python); if it doesn't, ask the user, since docs builds would fail while CI stays green.
+Add a version only once it has a final release. Run `uv python list X.Y --only-downloads`: if every match carries an `a`, `b` or `rc` suffix (e.g. `cpython-3.15.0rc2`), the version isn't final, so ask the user how to proceed.[% if docs_site %] ReadTheDocs builds on the newest supported version too, so it must also list X.Y under `build.tools.python` in its [config-file reference](https://docs.readthedocs.io/en/stable/config-file/v2.html#build-tools-python); if it doesn't, ask the user, since docs builds would fail while CI stays green.[% endif %]
 
 Branch protection requires only the `gate` job, whose name doesn't change with the matrix, so a rotation needs no ruleset change.
 
