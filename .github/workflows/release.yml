@@ -24,7 +24,10 @@ permissions:
 
 # Log lines are prefixed to be scannable: ✅ done, ❌ failed, ⏭️ skipped.
 jobs:
-  check:
+  # Named for the ruleset that may require it on `main`: a required check
+  # matches by name, so a generic `check` would be satisfied by any job
+  # called that.
+  release-check:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
 

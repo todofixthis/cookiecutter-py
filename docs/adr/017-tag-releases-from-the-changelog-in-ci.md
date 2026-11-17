@@ -122,9 +122,9 @@ workflows, and none needs to run on a tag.
 every job feeds it. `gate` runs on every push, and between releases
 `develop`'s top entry legitimately tags an older commit. Requiring the check
 on `main` alone would need a second ruleset beside the one
-todofixthis/terraform-github-repository manages, which requires only `gate`;
-that change waits on the backlog item for tag protection, which touches the
-same rulesets.
+todofixthis/terraform-github-repository manages, which requires only `gate`.
+The job is named `release-check` so that a ruleset can require it by a name
+no other job takes.
 
 **The workflow has no `concurrency` group.** With the default single pending
 slot, a third run would cancel a pending one, silently dropping that release.
@@ -144,7 +144,8 @@ version fail the second push.
 - No backport release is possible: a version must be newer than every tag.
 - Editing an old entry on `develop` changes what later Renovate PRs quote, but
   not the tag or the GitHub Release made from it.
-- Nothing protects a published tag from being moved or deleted. The
-  workflow stops a bad tag being created, not one being changed afterwards.
+- A tag ruleset on `refs/tags/*` blocks deleting or force-moving a published
+  tag, so a wrong tag can no longer be corrected in place: the fix is a new
+  release. It doesn't restrict creation, so the workflow's token still tags.
 
 [siat release]: https://github.com/todofixthis/phx-claude-siat/blob/main/.github/workflows/release.yml
