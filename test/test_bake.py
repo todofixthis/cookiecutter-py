@@ -16,6 +16,7 @@ import yaml
 from .conftest import (
     PYTHON_POLICY,
     TEMPLATE_ROOT,
+    bake,
     release_template_change,
     run_python_policy_check,
     update_project,
@@ -495,6 +496,13 @@ def test_without_docs_site_documentation_url(baked_without_docs_site: Path) -> N
     assert urls["Documentation"] == expected
     readme = (baked_without_docs_site / "README.rst").read_text(encoding="utf-8")
     assert f"Documentation is available at {expected}." in readme
+
+
+def test_without_docs_site_requires_readthedocs_slug(tmp_path: Path) -> None:
+    """A no-docs-site bake fails without a ``readthedocs_slug``, whose default
+    would name a site that doesn't exist."""
+    with pytest.raises(ValueError):
+        bake(tmp_path / "out", docs_site=False)
 
 
 def test_without_docs_site_records_answers(baked_without_docs_site: Path) -> None:

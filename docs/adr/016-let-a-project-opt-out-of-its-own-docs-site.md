@@ -3,7 +3,7 @@ status: Accepted
 date: 2026-11-16
 scope: [copier.yml, template/, scripts/template_owned.py, test/, .github/workflows/ci.yml, AGENTS.md]
 summary: A recorded docs_site question (default yes) decides whether a generated project gets its own Sphinx/ReadTheDocs site; answering no skips the Sphinx files, .readthedocs.yaml and docs_build hook through conditional file names (`[% if docs_site %]name[% endif %]`, the form any new docs-site file takes), drops the docs CI job and Sphinx dependencies, keeps readthedocs_slug as the ReadTheDocs site that documents the project (another project's, such as filters' for filters-iso), and makes every instruction to build, edit or link the site conditional, wherever it sits; not an unpublished Sphinx site, not one ReadTheDocs site per project, not local deletion.
-revisit-when: A project wants its own docs site hosted somewhere other than ReadTheDocs; every project that answered docs_site no switches to yes or stops taking the template; copier stops skipping a file whose name renders empty, or stops removing on update a file the new answers no longer render.
+revisit-when: A project wants its own docs site hosted somewhere other than ReadTheDocs; a project without its own site is documented somewhere other than ReadTheDocs; every project that answered docs_site no switches to yes or stops taking the template; copier stops skipping a file whose name renders empty, or stops removing on update a file the new answers no longer render.
 ---
 
 # 016: Let a Project Opt Out of Its Own Docs Site
@@ -45,7 +45,9 @@ Answering no skips the Sphinx files, `.readthedocs.yaml` and
 when they render empty; drops the `docs` job from `build.yml` and `gate`, the
 `docs_build` hook and Sphinx from `pyproject.toml`. Every project's docs are
 on ReadTheDocs, so `readthedocs_slug` still sets the `Documentation` URL,
-naming the site that documents a no project: filters-iso answers `filters`. Docs instructions elsewhere become conditional too:
+naming the site that documents a no project: filters-iso answers `filters`.
+For a no project the slug has no default, since its own would name a site
+that doesn't exist, and a validator requires an answer. Docs instructions elsewhere become conditional too:
 Jinja blocks in the README and the release and rotate-python-versions skills,
 and prose naming the condition ("where `.readthedocs.yaml` exists") in
 AGENTS.md, which isn't rendered. A no project keeps migration guides as
@@ -111,7 +113,9 @@ its condition in prose rather than becoming a rendered file.
 - `copier update --data docs_site=…` switches a project's answer: copier adds
   or deletes the files, deleting a locally edited seed without a conflict and
   leaving any project-authored page in `docs/` behind. Switching to no also
-  needs `--data readthedocs_slug=…` naming the site that documents it.
+  needs `--data readthedocs_slug=…` naming the site that documents it, unless
+  the recorded slug already does: the validator checks only that one is
+  given.
 - A no project's `Documentation` URL is a ReadTheDocs site's root, not a page
   or anchor within it; a deeper link belongs in its README, which it owns.
 
