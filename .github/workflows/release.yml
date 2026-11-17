@@ -1,0 +1,95 @@
+# Tags each release on `main` from the top entry of CHANGELOG.md, and
+# publishes a GitHub Release with the same notes (ADR 017). Every push to
+# `main` is a release: one whose top entry is already tagged on another
+# commit fails. On a PR into `main`, the same checks run without tagging, so a
+# bad version shows red before the merge.
+#
+# Not part of `gate` (ADR 009): a PR into `develop` legitimately carries an
+# already-tagged top entry between releases, and `main` only moves by a PR
+# that `gate` has already passed.
+#
+# No `concurrency` group: its default cancels a pending run when a third
+# arrives, which would drop that release silently. Concurrent runs tag
+# different commits, and two racing for one version fail the second push.
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Log lines are prefixed to be scannable: ✅ done, ❌ failed, ⏭️ skipped.
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      # Every tag, so the version checks see them all.
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # The runner's own python3: the script needs only the standard library,
+      # so no Python pin here for the rotate-python-versions skill to track.
+      - name: Check the release in CHANGELOG.md
+        run: |
+          python3 scripts/release_notes.py --commit "$GITHUB_SHA"
+          echo "✅ the top CHANGELOG.md entry is releasable"
+
+  publish:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # Pushes the tag and creates the GitHub Release.
+    permissions:
+      contents: write
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # Fails on a malformed changelog or an unreleasable version, so every
+      # later step can rely on its outputs and the three files it writes.
+      - name: Read the release from CHANGELOG.md
+        id: release
+        run: |
+          python3 scripts/release_notes.py --commit "$GITHUB_SHA" --annotation-out "$RUNNER_TEMP/annotation.txt" --notes-out "$RUNNER_TEMP/notes.md" --title-out "$RUNNER_TEMP/title.txt" > "$RUNNER_TEMP/release.env"
+          cat "$RUNNER_TEMP/release.env" >> "$GITHUB_OUTPUT"
+          echo "✅ read $(cat "$RUNNER_TEMP/release.env" | tr '\n' ' ')"
+
+      # Each step below skips what an earlier run already did, so re-running a
+      # failed run finishes the release without redoing any of it.
+      # `--cleanup=verbatim` keeps annotation lines starting with `#`, which
+      # git's default cleanup strips as comments.
+      - name: Create and push the tag if absent
+        env:
+          NEEDS_TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if [ "$NEEDS_TAG" != "true" ]; then
+            echo "⏭️ $VERSION already tags this commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate --cleanup=verbatim --file "$RUNNER_TEMP/annotation.txt" "$VERSION" "$GITHUB_SHA"
+          git push origin "refs/tags/$VERSION"
+          echo "✅ tagged $GITHUB_SHA as $VERSION"
+
+      - name: Publish the GitHub Release if absent
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "⏭️ release $VERSION already published"
+          else
+            gh release create "$VERSION" --verify-tag --title "$(cat "$RUNNER_TEMP/title.txt")" --notes-file "$RUNNER_TEMP/notes.md"
+            echo "✅ published release $VERSION"
+          fi
