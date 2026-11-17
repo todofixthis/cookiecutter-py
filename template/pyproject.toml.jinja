@@ -35,20 +35,24 @@ dev = [
     "autohooks-plugin-ruff>=25,<26",
     "mypy>=2,<3",
     "pytest>=9,<10",
+[%- if docs_site %]
     "sphinx>=9,<10",
     "sphinx_rtd_theme>=3.1,<4",
+[%- endif %]
     "tox>=4,<5",
     "tox-uv>=1,<2",
 ]
 
-# Used by GitHub Actions and ReadTheDocs.
+# Used by GitHub Actions[% if docs_site %] and ReadTheDocs[% endif %].
 ci = [
     "black>=26,<27",
     "mypy>=2,<3",
     "pytest>=9,<10",
     "ruff>=0.17,<0.18",
+[%- if docs_site %]
     "sphinx>=9,<10",
     "sphinx_rtd_theme>=3.1,<4",
+[%- endif %]
     "tox-uv>=1,<2",
 ]
 
@@ -59,12 +63,14 @@ pre-commit = [
     "autohooks.plugins.mypy",
     "autohooks.plugins.pytest",
     "autohooks.plugins.ruff",
+[%- if docs_site %]
     # Runs a strict, full-reread Sphinx build on staged docs/docstring
     # changes (see
     # https://github.com/todofixthis/cookiecutter-py/blob/main/docs/adr/007-check-the-docs-build-in-the-pre-commit-hook.md)
     # — removing this reopens a gap neither CI nor the pre-commit chain
     # otherwise catches.
     "docs_build",
+[%- endif %]
 ]
 
 [tool.black]
@@ -80,14 +86,20 @@ target-version = [
 include = [
     "src/[[ package_name ]]",
     "LICENCE.txt",
+[%- if docs_site %]
     "docs",
+[%- endif %]
     "test",
 ]
+[%- if docs_site %]
 exclude = ["docs/_build"]
+[%- endif %]
 
 [tool.hatch.build.targets.wheel]
 include = ["src/[[ package_name ]]"]
+[%- if docs_site %]
 exclude = ["docs/_build"]
+[%- endif %]
 
 [tool.hatch.build.targets.wheel.sources]
 "src/[[ package_name ]]" = "[[ package_name ]]"

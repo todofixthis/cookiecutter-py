@@ -49,7 +49,11 @@ A **breaking change** is anything that makes previously-working code fail — at
 
 It must:
 - **cover *this* release's breaking change.** A guide left over from an earlier release satisfies nothing — its existence is what makes this the easy check to fake. A break shipped in a `.3.0` gets its own section in `upgrading_to_v<major>.rst`, headed by the version that introduced it.
+[%- if docs_site %]
 - exist, be listed in the `docs/index.rst` toctree, and be linked from the upgrade-alert listing in **both** `docs/index.rst` and `README.rst` — the two carry the same listing and drift apart easily. The link syntax differs by file: `docs/index.rst` uses a Sphinx `:doc:` role targeting `upgrading_to_v<major>`; `README.rst` uses a relative link to the source, `` `Upgrading to [[ project_name ]] v<major> <docs/upgrading_to_v<major>.rst>`_ `` — the `:doc:` role renders as raw text on GitHub, where the README is read.
+[%- else %]
+- exist, and be linked from the upgrade-alert listing in `README.rst` with an absolute link, `` `Upgrading to [[ project_name ]] v<major> <https://github.com/[[ github_username ]]/[[ github_project_name ]]/blob/main/docs/upgrading_to_v<major>.rst>`_ ``, which works on PyPI too. This project publishes no docs site of its own, so GitHub's rendering of that file is where readers find it.
+[%- endif %]
 - follow _Writing a Migration Guide_ below.
 
 **If any of that is missing, the release stops here** — write it first.
@@ -58,8 +62,12 @@ Release notes do not satisfy this gate. They are read once, by people who alread
 
 ```bash
 ls docs/upgrading_to_v<major>.rst                        # exists
+[%- if docs_site %]
 rg 'upgrading_to_v<major>' docs/index.rst README.rst     # index: toctree + alert; README: alert
 uv run make -C docs clean && uv run make -C docs html    # builds, and it isn't orphaned
+[%- else %]
+rg 'upgrading_to_v<major>' README.rst                    # README: alert
+[%- endif %]
 ```
 Then read the guide and confirm it covers this release's break. No command checks that for you.
 
@@ -227,7 +235,7 @@ Because `develop` now contains all of `main`'s commits, the histories no longer 
 >   - {migration instructions}
 >   - {error you'll see if you don't migrate}
 >
-> Full migration guide: [Upgrading to [[ project_name ]] v{major}](https://[[ readthedocs_slug ]].readthedocs.io/en/latest/upgrading_to_v{major}.html)
+> Full migration guide: [Upgrading to [[ project_name ]] v{major}]([% if docs_site %]https://[[ readthedocs_slug ]].readthedocs.io/en/latest/upgrading_to_v{major}.html[% else %]https://github.com/[[ github_username ]]/[[ github_project_name ]]/blob/main/docs/upgrading_to_v{major}.rst[% endif %])
 
 ## New features
 ## Enhancements
@@ -254,7 +262,7 @@ A filled-in breaking changes alert:
 >   - Replace with `SomeClass.new_method()`
 >   - You'll know you need to migrate if you see: `AttributeError: 'SomeClass' object has no attribute 'old_method'`
 >
-> Full migration guide: [Upgrading to [[ project_name ]] v{major}](https://[[ readthedocs_slug ]].readthedocs.io/en/latest/upgrading_to_v{major}.html)
+> Full migration guide: [Upgrading to [[ project_name ]] v{major}]([% if docs_site %]https://[[ readthedocs_slug ]].readthedocs.io/en/latest/upgrading_to_v{major}.html[% else %]https://github.com/[[ github_username ]]/[[ github_project_name ]]/blob/main/docs/upgrading_to_v{major}.rst[% endif %])
 ```
 
 ### Grouping related items
@@ -283,8 +291,13 @@ A filled-in breaking changes alert:
 ---
 
 ## Writing a Migration Guide
+[%- if docs_site %]
 
 `docs/upgrading_to_v<major>.rst`. It stays unreachable until wired into three slots: the `docs/index.rst` toctree, and the upgrade-alert listing in **both** `docs/index.rst` and `README.rst`. The two listings (one bullet per major upgrade) drift apart easily — add the bullet to each, or the README goes stale. Their link syntax differs: `docs/index.rst` uses a Sphinx `:doc:` role targeting `upgrading_to_v<major>`; `README.rst` uses a relative link to the source, `` `Upgrading to [[ project_name ]] v<major> <docs/upgrading_to_v<major>.rst>`_ `` — `:doc:` renders as raw text on GitHub, where the README is read.
+[%- else %]
+
+`docs/upgrading_to_v<major>.rst`. It stays unreachable until linked from the upgrade-alert listing in `README.rst` (one bullet per major upgrade), with an absolute link: `` `Upgrading to [[ project_name ]] v<major> <https://github.com/[[ github_username ]]/[[ github_project_name ]]/blob/main/docs/upgrading_to_v<major>.rst>`_ ``. Readers see GitHub's rendering of it, which shows a Sphinx role (`:class:`, `:doc:`, `:ref:`) as raw text: write plain reStructuredText, with double-backquoted names and full links.
+[%- endif %]
 
 One page covers a whole major line: the move onto it, and any break shipped later within it. Say so in the opening paragraph — someone already on the new major has no reason to guess that "Upgrading to [[ project_name ]] v<major>" is where a later break within it is written down. Breaks after the major boundary get their own `Changes in v<version>` section; the major boundary itself is the page's main content.
 
@@ -300,7 +313,7 @@ Each breaking change needs four things:
 Then add what the fix leads them into next:
 
 - **Second-order traps.** A fix that lands people in a subtler failure needs that failure documented beside it, with its error text.
-- **Facts stranded in ADRs.** ADRs are not in the toctree and readers never see them. If an ADR holds the only explanation of something a migrating developer needs, the guide is where it goes.
+- **Facts stranded in ADRs.** [% if docs_site %]ADRs are not in the toctree and readers never see them.[% else %]Readers of the guide never see ADRs.[% endif %] If an ADR holds the only explanation of something a migrating developer needs, the guide is where it goes.
 
 Verify every code sample and every error message by running it.
 

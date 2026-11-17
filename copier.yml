@@ -37,6 +37,14 @@ copyright_year:
   type: int
   validator: "[% if copyright_year < 1000 or copyright_year > 9999 %]Must be a 4-digit year[% endif %]"
 
+# Whether this project publishes its own Sphinx site on ReadTheDocs. Answer
+# no where another project's site documents it, as filters' documents
+# filters-iso: no `docs/` Sphinx files, `.readthedocs.yaml`, `docs` CI job or
+# `docs_build` hook, and `readthedocs_slug` names that other site (ADR 016).
+docs_site:
+  type: bool
+  default: true
+
 github_username:
   type: str
   default: todofixthis
@@ -91,17 +99,20 @@ python_minor:
   default: "[[ python_version.split('.')[1] ]]"
   when: false
 
-# The project's ReadTheDocs subdomain: the PyPI name without its `phx-`
-# prefix (filters.readthedocs.io, not phx-filters). filters and
-# class-registry first shipped unprefixed at a former employer, which
-# abandoned them without taking them down; the maintainer forked them and
-# repointed the old ReadTheDocs domains at the forks. Once copied from this
-# template, each records its own answer, so changing this default won't move
-# their slugs on update; it keeps new projects in the same URL style as
+# The ReadTheDocs subdomain documenting this project. Where `docs_site` is no
+# it names another project's site, with no default, since only the answerer
+# knows which; otherwise it is the project's own, by default the PyPI name
+# without its `phx-` prefix (filters.readthedocs.io, not phx-filters).
+# filters and class-registry first shipped unprefixed at a former employer,
+# which abandoned them without taking them down; the maintainer forked them
+# and repointed the old ReadTheDocs domains at the forks. Once copied from
+# this template, each records its own answer, so changing this default won't
+# move their slugs on update; it keeps new projects in the same URL style as
 # those two.
 readthedocs_slug:
   type: str
-  default: "[[ pypi_project_name | regex_replace('^phx-', '') ]]"
+  default: "[% if docs_site %][[ pypi_project_name | regex_replace('^phx-', '') ]][% endif %]"
+  validator: "[% if not readthedocs_slug %]Name the ReadTheDocs site that documents this project[% endif %]"
 
 # Seeds `__version__`; without it hatchling's dynamic version renders empty.
 version:

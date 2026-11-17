@@ -16,6 +16,7 @@ import yaml
 from .conftest import (
     PYTHON_POLICY,
     TEMPLATE_ROOT,
+    bake,
     release_template_change,
     run_python_policy_check,
     update_project,
@@ -73,20 +74,20 @@ def test_bake_leaves_out_ignored_junk(template_repo: Path, tmp_path: Path) -> No
     assert not any(os.path.lexists(output_dir / name) for name in junk)
 
 
-def test_leaves_no_unrendered_jinja(baked_project: Path) -> None:
+def test_leaves_no_unrendered_jinja(each_bake: Path) -> None:
     """No template markers survive rendering in any generated file."""
     offenders = [
-        str(path.relative_to(baked_project))
-        for path in baked_project.rglob("*")
+        str(path.relative_to(each_bake))
+        for path in each_bake.rglob("*")
         if path.is_file()
         and RE_UNRENDERED_JINJA.search(path.read_text(encoding="utf-8"))
     ]
     assert offenders == []
 
 
-def test_generates_valid_pyproject_toml(baked_project: Path) -> None:
+def test_generates_valid_pyproject_toml(each_bake: Path) -> None:
     """The generated project's pyproject.toml parses and names the PyPI package."""
-    with (baked_project / "pyproject.toml").open("rb") as f_in:
+    with (each_bake / "pyproject.toml").open("rb") as f_in:
         data = tomllib.load(f_in)
     assert data["project"]["name"] == "phx-my-python-project"
 
@@ -255,17 +256,17 @@ def test_project_rules_survive_update(
     assert "_commit: 0.0.2" in answers
 
 
-def test_ci_leaves_out_dev_group(baked_project: Path) -> None:
+def test_ci_leaves_out_dev_group(each_bake: Path) -> None:
     """Every uv command in CI leaves out `dev`, whose tooling can lack wheels."""
     workflow = yaml.safe_load(
-        (baked_project / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        (each_bake / ".github/workflows/build.yml").read_text(encoding="utf-8")
     )
     assert workflow["env"]["UV_NO_DEFAULT_GROUPS"] == "1"
 
 
-def test_ci_lints(baked_project: Path) -> None:
+def test_ci_lints(each_bake: Path) -> None:
     """CI's ``lint`` job runs ``ruff check`` and ``black --check``."""
-    runs = {step.get("run") for step in load_ci_jobs(baked_project)["lint"]["steps"]}
+    runs = {step.get("run") for step in load_ci_jobs(each_bake)["lint"]["steps"]}
     assert {"uv run ruff check", "uv run black --check ."} <= runs
 
 
@@ -300,9 +301,9 @@ def test_ci_job_names(baked_project: Path) -> None:
     }
 
 
-def test_ci_has_gate_needing_every_job(baked_project: Path) -> None:
+def test_ci_has_gate_needing_every_job(each_bake: Path) -> None:
     """The ``gate`` job aggregates every other job and fails on a non-success."""
-    jobs = load_ci_jobs(baked_project)
+    jobs = load_ci_jobs(each_bake)
     gate = jobs["gate"]
     assert set(gate["needs"]) == set(jobs) - {"gate"}
     assert gate["if"] == "always()"
@@ -442,3 +443,105 @@ def test_gitignore_covers_release_files(baked_project: Path, name: str) -> None:
         ["git", "check-ignore", "-q", name], cwd=baked_project, check=False
     )
     assert result.returncode == 0
+
+
+def test_without_docs_site_bakes_no_sphinx_site(baked_without_docs_site: Path) -> None:
+    """Answering no to ``docs_site`` leaves out every Sphinx and ReadTheDocs file."""
+    for path in (
+        ".autohooks/docs_build.py",
+        ".readthedocs.yaml",
+        "docs/Makefile",
+        "docs/api.rst",
+        "docs/conf.py",
+        "docs/index.rst",
+    ):
+        assert not (baked_without_docs_site / path).exists(), path
+    assert (baked_without_docs_site / "docs" / "adr" / "INDEX.md").is_file()
+    assert [p.name for p in (baked_without_docs_site / "docs").iterdir()] == ["adr"]
+
+
+def test_without_docs_site_ci_has_no_docs_job(baked_without_docs_site: Path) -> None:
+    """A project with no docs site runs every CI job but ``docs``."""
+    assert set(load_ci_jobs(baked_without_docs_site)) == {
+        "test",
+        "type-check",
+        "lint",
+        "adrs",
+        "gate",
+    }
+
+
+def test_without_docs_site_pyproject_drops_sphinx(
+    baked_without_docs_site: Path,
+) -> None:
+    """No Sphinx dependency, docs_build hook or docs sdist entry is generated."""
+    with (baked_without_docs_site / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    for group in ("ci", "dev"):
+        deps = data["dependency-groups"][group]
+        assert not [d for d in deps if d.startswith("sphinx")], group
+    assert "docs_build" not in data["tool"]["autohooks"]["pre-commit"]
+    sdist = data["tool"]["hatch"]["build"]["targets"]["sdist"]
+    assert "docs" not in sdist["include"]
+    assert "exclude" not in sdist
+    assert "exclude" not in data["tool"]["hatch"]["build"]["targets"]["wheel"]
+
+
+def test_without_docs_site_documentation_url(baked_without_docs_site: Path) -> None:
+    """The Documentation URL and README point at the site ``readthedocs_slug``
+    names, which documents the project from elsewhere."""
+    expected = "https://parent-project.readthedocs.io/"
+    with (baked_without_docs_site / "pyproject.toml").open("rb") as f_in:
+        urls = tomllib.load(f_in)["project"]["urls"]
+    assert urls["Documentation"] == expected
+    readme = (baked_without_docs_site / "README.rst").read_text(encoding="utf-8")
+    assert f"Documentation is available at {expected}." in readme
+
+
+def test_without_docs_site_requires_readthedocs_slug(tmp_path: Path) -> None:
+    """A no-docs-site bake fails without a ``readthedocs_slug``, whose default
+    would name a site that doesn't exist."""
+    with pytest.raises(ValueError, match="readthedocs_slug"):
+        bake(tmp_path / "out", docs_site=False)
+
+
+def test_without_docs_site_records_answers(baked_without_docs_site: Path) -> None:
+    """The answers file records ``docs_site`` and ``readthedocs_slug``."""
+    answers = yaml.safe_load(
+        (baked_without_docs_site / ".copier-answers.yml").read_text(encoding="utf-8")
+    )
+    assert answers["docs_site"] is False
+    assert answers["readthedocs_slug"] == "parent-project"
+
+
+# What a docs instruction or link looks like. AGENTS.md is exempt: it is the
+# same in every project, so it names its docs commands with their condition.
+RE_DOCS_SITE_INSTRUCTION = re.compile(
+    r"make -C docs|make html|toctree|docs/conf\.py|docs/index\.rst|my-python-project\.readthedocs"
+)
+DOCS_SITE_INSTRUCTION_EXEMPT = {"AGENTS.md", "CLAUDE.md"}
+
+
+def docs_site_instructions(project: Path) -> set[str]:
+    """List the files in ``project`` naming its docs build, pages or site."""
+    return {
+        path.relative_to(project).as_posix()
+        for path in project.rglob("*")
+        if path.is_file()
+        and ".git" not in path.parts
+        and path.relative_to(project).as_posix() not in DOCS_SITE_INSTRUCTION_EXEMPT
+        and RE_DOCS_SITE_INSTRUCTION.search(path.read_text(encoding="utf-8"))
+    }
+
+
+def test_with_docs_site_has_docs_instructions(baked_project: Path) -> None:
+    """The default bake's README and release skill name its docs, so the
+    no-docs-site check below has something to miss."""
+    assert {"README.rst", ".agents/skills/release/SKILL.md"} <= (
+        docs_site_instructions(baked_project)
+    )
+
+
+def test_without_docs_site_names_no_docs_site(baked_without_docs_site: Path) -> None:
+    """No generated file but AGENTS.md tells a no-docs-site project to build docs."""
+    assert docs_site_instructions(baked_without_docs_site) == set()
