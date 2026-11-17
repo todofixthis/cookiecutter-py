@@ -93,7 +93,7 @@ jobs:
         env:
           UV_PYTHON: ${{ matrix.python-version }}
         run: uv sync --group ci
-      - name: Bake a project with default answers, bar docs_site
+      - name: Bake a project with default answers, bar its docs site
         env:
           UV_PYTHON: ${{ matrix.python-version }}
         run: uv run copier copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x --data docs_site=${{ matrix.docs-site }} ${{ matrix.slug-data }} . /tmp/baked/my-python-project

@@ -47,10 +47,10 @@ when they render empty; drops the `docs` job from `build.yml` and `gate`, the
 on ReadTheDocs, so `readthedocs_slug` still sets the `Documentation` URL,
 naming the site that documents a no project: filters-iso answers `filters`.
 For a no project the slug has no default, since its own would name a site
-that doesn't exist, and a validator requires an answer. Docs instructions elsewhere become conditional too:
-Jinja blocks in the README and the release and rotate-python-versions skills,
-and prose naming the condition ("where `.readthedocs.yaml` exists") in
-AGENTS.md, which isn't rendered. A no project keeps migration guides as
+that doesn't exist, and a validator requires an answer. Docs instructions
+elsewhere become conditional too: Jinja blocks in the README and the release
+and rotate-python-versions skills, and prose naming the condition ("where
+`.readthedocs.yaml` exists") in AGENTS.md, which isn't rendered. A no project keeps migration guides as
 `docs/upgrading_to_v<major>.rst`, linked from its README and read on GitHub.
 
 **Pros:** Existing projects keep their sites, since `--defaults` answers yes

@@ -501,7 +501,7 @@ def test_without_docs_site_documentation_url(baked_without_docs_site: Path) -> N
 def test_without_docs_site_requires_readthedocs_slug(tmp_path: Path) -> None:
     """A no-docs-site bake fails without a ``readthedocs_slug``, whose default
     would name a site that doesn't exist."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="readthedocs_slug"):
         bake(tmp_path / "out", docs_site=False)
 
 
