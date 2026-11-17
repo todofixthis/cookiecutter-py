@@ -16,11 +16,7 @@ from .conftest import (
 
 # Questions the maintainer must answer on every bake; the template can't guess
 # a copyright year or a one-line description.
-QUESTIONS_WITHOUT_DEFAULT = {
-    "copyright_year",
-    "documentation_url",
-    "project_short_description",
-}
+QUESTIONS_WITHOUT_DEFAULT = {"copyright_year", "project_short_description"}
 
 
 def test_update_applies_template_change(
@@ -88,8 +84,8 @@ def test_update_keeps_a_project_without_docs_site(
         data={
             "copyright_year": 2026,
             "docs_site": False,
-            "documentation_url": "https://example.com/docs",
             "project_short_description": "x",
+            "readthedocs_slug": "parent-project",
         },
         defaults=True,
         vcs_ref="0.0.1",
@@ -109,6 +105,6 @@ def test_update_keeps_a_project_without_docs_site(
 
     assert "_commit: 0.0.2" in answers
     assert "docs_site: false" in answers
-    assert "documentation_url: https://example.com/docs" in answers
+    assert "readthedocs_slug: parent-project" in answers
     assert not (project / "docs" / "conf.py").exists()
     assert not (project / ".readthedocs.yaml").exists()

@@ -78,15 +78,13 @@ def baked_project(tmp_path: Path) -> Iterator[Path]:
 @pytest.fixture
 def baked_without_docs_site(tmp_path: Path) -> Path:
     """Bakes the template for a project publishing no docs site of its own."""
-    return bake(
-        tmp_path / "out", docs_site=False, documentation_url="https://example.com/docs"
-    )
+    return bake(tmp_path / "out", docs_site=False, readthedocs_slug="parent-project")
 
 
 @pytest.fixture(params=[True, False], ids=["docs-site", "no-docs-site"])
 def each_bake(request: pytest.FixtureRequest, tmp_path: Path) -> Path:
     """Bakes the template once per ``docs_site`` answer."""
-    data = {} if request.param else {"documentation_url": "https://example.com/docs"}
+    data = {} if request.param else {"readthedocs_slug": "parent-project"}
     return bake(tmp_path / "out", docs_site=request.param, **data)
 
 

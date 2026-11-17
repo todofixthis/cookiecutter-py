@@ -16,7 +16,6 @@ import yaml
 from .conftest import (
     PYTHON_POLICY,
     TEMPLATE_ROOT,
-    bake,
     release_template_change,
     run_python_policy_check,
     update_project,
@@ -488,29 +487,23 @@ def test_without_docs_site_pyproject_drops_sphinx(
 
 
 def test_without_docs_site_documentation_url(baked_without_docs_site: Path) -> None:
-    """The Documentation URL and README point at ``documentation_url``."""
+    """The Documentation URL and README point at the site ``readthedocs_slug``
+    names, which documents the project from elsewhere."""
+    expected = "https://parent-project.readthedocs.io/"
     with (baked_without_docs_site / "pyproject.toml").open("rb") as f_in:
         urls = tomllib.load(f_in)["project"]["urls"]
-    assert urls["Documentation"] == "https://example.com/docs"
+    assert urls["Documentation"] == expected
     readme = (baked_without_docs_site / "README.rst").read_text(encoding="utf-8")
-    assert "Documentation is available at https://example.com/docs." in readme
-
-
-def test_without_docs_site_requires_documentation_url(tmp_path: Path) -> None:
-    """A no-docs-site bake fails without ``documentation_url``, which has no
-    default."""
-    with pytest.raises(ValueError):
-        bake(tmp_path / "out", docs_site=False)
+    assert f"Documentation is available at {expected}." in readme
 
 
 def test_without_docs_site_records_answers(baked_without_docs_site: Path) -> None:
-    """The answers file records ``docs_site`` and ``documentation_url``, no slug."""
+    """The answers file records ``docs_site`` and ``readthedocs_slug``."""
     answers = yaml.safe_load(
         (baked_without_docs_site / ".copier-answers.yml").read_text(encoding="utf-8")
     )
     assert answers["docs_site"] is False
-    assert answers["documentation_url"] == "https://example.com/docs"
-    assert "readthedocs_slug" not in answers
+    assert answers["readthedocs_slug"] == "parent-project"
 
 
 # What a docs instruction or link looks like. AGENTS.md is exempt: it is the

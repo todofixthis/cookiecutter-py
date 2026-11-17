@@ -2,7 +2,7 @@
 status: Accepted
 date: 2026-11-16
 scope: [copier.yml, template/, scripts/template_owned.py, test/, .github/workflows/ci.yml, AGENTS.md]
-summary: A recorded docs_site question (default yes) decides whether a generated project gets its own Sphinx/ReadTheDocs site; answering no skips the Sphinx files, .readthedocs.yaml and docs_build hook through conditional file names (`[% if docs_site %]name[% endif %]`, the form any new docs-site file takes), drops the docs CI job and Sphinx dependencies, takes documentation_url (no default) for the Documentation URL, and makes every instruction to build, edit or link the site conditional, wherever it sits; not an unpublished Sphinx site, not one ReadTheDocs site per project, not local deletion.
+summary: A recorded docs_site question (default yes) decides whether a generated project gets its own Sphinx/ReadTheDocs site; answering no skips the Sphinx files, .readthedocs.yaml and docs_build hook through conditional file names (`[% if docs_site %]name[% endif %]`, the form any new docs-site file takes), drops the docs CI job and Sphinx dependencies, keeps readthedocs_slug as the ReadTheDocs site that documents the project (another project's, such as filters' for filters-iso), and makes every instruction to build, edit or link the site conditional, wherever it sits; not an unpublished Sphinx site, not one ReadTheDocs site per project, not local deletion.
 revisit-when: A project wants its own docs site hosted somewhere other than ReadTheDocs; every project that answered docs_site no switches to yes or stops taking the template; copier stops skipping a file whose name renders empty, or stops removing on update a file the new answers no longer render.
 ---
 
@@ -43,9 +43,9 @@ API on another site.
 Answering no skips the Sphinx files, `.readthedocs.yaml` and
 `.autohooks/docs_build.py` through conditional file names, which copier skips
 when they render empty; drops the `docs` job from `build.yml` and `gate`, the
-`docs_build` hook and Sphinx from `pyproject.toml`; and asks
-`documentation_url` for the `Documentation` URL in place of
-`readthedocs_slug`. Docs instructions elsewhere become conditional too:
+`docs_build` hook and Sphinx from `pyproject.toml`. Every project's docs are
+on ReadTheDocs, so `readthedocs_slug` still sets the `Documentation` URL,
+naming the site that documents a no project: filters-iso answers `filters`. Docs instructions elsewhere become conditional too:
 Jinja blocks in the README and the release and rotate-python-versions skills,
 and prose naming the condition ("where `.readthedocs.yaml` exists") in
 AGENTS.md, which isn't rendered. A no project keeps migration guides as
@@ -111,7 +111,9 @@ its condition in prose rather than becoming a rendered file.
 - `copier update --data docs_site=…` switches a project's answer: copier adds
   or deletes the files, deleting a locally edited seed without a conflict and
   leaving any project-authored page in `docs/` behind. Switching to no also
-  needs `--data documentation_url=…`, which has no default.
+  needs `--data readthedocs_slug=…` naming the site that documents it.
+- A no project's `Documentation` URL is a ReadTheDocs site's root, not a page
+  or anchor within it; a deeper link belongs in its README, which it owns.
 
 [ADR 007]: 007-check-the-docs-build-in-the-pre-commit-hook.md
 [ADR 010]: 010-split-agents-md-into-templated-and-project-parts.md
