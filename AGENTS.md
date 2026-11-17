@@ -54,7 +54,7 @@ Keep `--vcs-ref=HEAD`: without it copier bakes the newest release tag, not your 
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
-The phx plugin's ADR tool, for use where the skill isn't available. Renovate bumps these pins and the `adrs` CI job's together, matching each on its trailing `# X.Y.Z` comment (ADR 009) — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.
+The phx plugin's ADR tool, for use where the skill isn't available. Renovate bumps these pins and the `adrs` CI job's together, matching each on its trailing `# X.Y.Z` comment (ADR 018) — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.
 
 ```bash
 # Scaffold the next ADR

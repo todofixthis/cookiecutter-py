@@ -4,9 +4,9 @@
 # commit fails. On a PR into `main`, the same checks run without tagging, so a
 # bad version shows red before the merge.
 #
-# Not part of `gate` (ADR 009): a PR into `develop` legitimately carries an
-# already-tagged top entry between releases, and `main` only moves by a PR
-# that `gate` has already passed.
+# Not part of `gate`: a PR into `develop` legitimately carries an
+# already-tagged top entry between releases. A ruleset targeting `main` alone
+# requires `release-check` by name, beside `gate` (ADR 018), so keep the name.
 #
 # No `concurrency` group: its default cancels a pending run when a third
 # arrives, which would drop that release silently. Concurrent runs tag
@@ -24,9 +24,8 @@ permissions:
 
 # Log lines are prefixed to be scannable: ✅ done, ❌ failed, ⏭️ skipped.
 jobs:
-  # Named for the ruleset that may require it on `main`: a required check
-  # matches by name, so a generic `check` would be satisfied by any job
-  # called that.
+  # The `main` ruleset requires this job by name (ADR 018): renamed, it
+  # leaves that ruleset waiting on a check that never reports.
   release-check:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

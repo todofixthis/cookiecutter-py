@@ -9,7 +9,7 @@ workflow file, so that template updates don't conflict with it. The rule's text 
 `scripts/template_owned.py`, which generates `template/.agents/rules/template-owned.md.jinja`
 (ADR 012), so edit the script, never the `.jinja`.
 
-`docs/adr/009-gate-adr-ci-and-the-phx-pin.md` makes `gate` in
+`docs/adr/018-require-gate-everywhere-and-the-release-check-on-main.md` makes `gate` in
 `template/.github/workflows/build.yml.jinja` the only required check, and its Consequences
 say every job must sit in `gate`'s `needs` or it stops blocking merges. `needs` can't reach
 a job in another workflow file, and the shared Terraform module requires `gate` alone. So a
@@ -19,7 +19,8 @@ document says so.
 ## Bounds on a fix
 
 Two fixes break decisions already taken: a second required check needs the per-repository
-list in shared Terraform that ADR 009 rejected, and making `build.yml` project-owned loses
+list in shared Terraform that ADR 018 rejects for generated projects (this repository's
+`main` has one, through a ruleset of its own), and making `build.yml` project-owned loses
 template updates to it. One candidate keeps both: `build.yml` calls a project-owned
 reusable workflow (`uses: ./.github/workflows/<name>.yml`), `gate` lists that call job in
 `needs`, and the template ships a stub of it that copier writes only on first copy
@@ -30,4 +31,4 @@ choice within those bounds.
 
 - A generated project has a documented way to add a job that blocks merges without editing
   a template-owned file.
-- `scripts/template_owned.py`'s rule and ADR 009's Consequences agree on it.
+- `scripts/template_owned.py`'s rule and ADR 018's Consequences agree on it.

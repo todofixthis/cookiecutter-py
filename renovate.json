@@ -5,7 +5,7 @@
       "customType": "regex",
       "datasourceTemplate": "github-tags",
       "depNameTemplate": "todofixthis/phx-claude-siat",
-      "description": "Bump the phx-adr pins in CI, the root AGENTS.md and the template together (ADR 009).",
+      "description": "Bump the phx-adr pins in CI, the root AGENTS.md and the template together (ADR 018).",
       "managerFilePatterns": [
         "/^\\.github/workflows/[^/]+\\.ya?ml$/",
         "/^template/\\.github/workflows/[^/]+\\.jinja$/",
