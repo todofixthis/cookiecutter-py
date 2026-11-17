@@ -56,19 +56,36 @@ def isolate_git_config(
         yield
 
 
-@pytest.fixture
-def baked_project(tmp_path: Path) -> Iterator[Path]:
-    """Bakes the template with its default answers into a temp directory."""
-    output_dir = tmp_path / "out"
+def bake(output_dir: Path, **data: object) -> Path:
+    """Bakes this checkout's working tree with default answers, bar ``data``."""
     copier.run_copy(
         str(TEMPLATE_ROOT),
         output_dir,
-        data={"copyright_year": 2026, "project_short_description": "x"},
+        data={"copyright_year": 2026, "project_short_description": "x", **data},
         defaults=True,
         vcs_ref="HEAD",
         unsafe=False,
     )
-    yield output_dir
+    return output_dir
+
+
+@pytest.fixture
+def baked_project(tmp_path: Path) -> Iterator[Path]:
+    """Bakes the template with its default answers into a temp directory."""
+    yield bake(tmp_path / "out")
+
+
+@pytest.fixture
+def baked_without_docs_site(tmp_path: Path) -> Path:
+    """Bakes the template for a project publishing no docs site of its own."""
+    return bake(tmp_path / "out", docs_site=False, readthedocs_slug="parent-project")
+
+
+@pytest.fixture(params=[True, False], ids=["docs-site", "no-docs-site"])
+def each_bake(request: pytest.FixtureRequest, tmp_path: Path) -> Path:
+    """Bakes the template once per ``docs_site`` answer."""
+    data = {} if request.param else {"readthedocs_slug": "parent-project"}
+    return bake(tmp_path / "out", docs_site=request.param, **data)
 
 
 @pytest.fixture

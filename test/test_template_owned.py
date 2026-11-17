@@ -2,6 +2,7 @@
 
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -40,17 +41,19 @@ def test_committed_rule_is_current() -> None:
     assert RULE_TEMPLATE.read_text() == template_owned.render()
 
 
-def test_rule_lists_every_template_owned_file(baked_project: Path) -> None:
+def test_rule_lists_every_template_owned_file(each_bake: Path) -> None:
     """A bake's rule lists every baked file except the seeds and project.md."""
     seeds = {
-        seed.replace("[[ package_name ]]", "my_python_project")
+        template_owned.CONDITIONAL_NAME.sub(r"\g<name>", seed).replace(
+            "[[ package_name ]]", "my_python_project"
+        )
         for seed in template_owned.SEED_FILES
     }
     first_copy_only = {".agents/rules/project.md", ".claude/rules/project.md"}
 
-    expected = baked_paths(baked_project) - seeds - first_copy_only
+    expected = baked_paths(each_bake) - seeds - first_copy_only
 
-    assert set(rule_paths(baked_project)) == expected
+    assert set(rule_paths(each_bake)) == expected
 
 
 @pytest.mark.parametrize("seed", ["docs/api.rst.jinja", "docs/typo.rst"])
@@ -119,8 +122,16 @@ def test_plugin_regenerates_a_stale_rule(
     assert staged_files == ([rule] if regenerated else [])
 
 
-def test_rule_paths_are_all_rendered(baked_project: Path) -> None:
+def test_rule_paths_are_all_rendered(each_bake: Path) -> None:
     """No path in a baked rule keeps a copier marker or `.jinja` suffix."""
-    for path in rule_paths(baked_project):
+    for path in rule_paths(each_bake):
         assert not any(m in path for m in ("[[", "[%", "[#")), path
         assert not path.endswith(".jinja"), path
+
+
+def test_rule_lists_seeds_only_where_baked(each_bake: Path) -> None:
+    """The rule's seed list names only seed files the bake wrote."""
+    text = (each_bake / template_owned.RULE_RELPATH).read_text()
+    listed = set(re.findall(r"^- `([^`]+)`$", text, re.MULTILINE))
+    assert listed
+    assert {p for p in listed if not (each_bake / p).exists()} == set()
