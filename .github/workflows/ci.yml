@@ -134,10 +134,10 @@ jobs:
         working-directory: /tmp/baked/my-python-project/docs
 
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,
-  # so this is the only check a commit made elsewhere meets (ADR 009 forbids a
-  # repo-local copy of the tool). Renovate bumps the pinned release here, in
-  # AGENTS.md and in the template together; keep the trailing version comment
-  # it matches on.
+  # so this is the only check a commit made elsewhere meets (ADR 018).
+  # AGENTS.md rules out a repo-local copy of the tool. Renovate bumps the
+  # pinned release here, in AGENTS.md and in the template together; keep the
+  # trailing version comment it matches on.
   adrs:
     runs-on: ubuntu-latest
 
@@ -149,8 +149,9 @@ jobs:
       - name: Check ADRs
         run: uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr check # 9.1.0
 
-  # The single required status check. Depending on every job here collapses
-  # their results into one, so branch protection requires only `gate`. A
+  # The required status check on `develop` and `main`. Depending on every job
+  # here collapses their results into one, so no ruleset lists them. `main`
+  # also requires the Release workflow's `release-check` (ADR 018). A
   # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   gate:
     needs: [adrs, generate, test, type-check]
