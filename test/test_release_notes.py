@@ -2,6 +2,7 @@
 
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -234,3 +235,14 @@ def test_cli_check_validates_without_git() -> None:
         [sys.executable, SCRIPT, "--check"], capture_output=True, check=False
     )
     assert result.returncode == 0
+
+
+def test_pyproject_version_matches_changelog() -> None:
+    """``pyproject.toml``'s version is the top changelog entry's, so neither drifts."""
+    pyproject = tomllib.loads(
+        (release_notes.REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    )
+    top = release_notes.parse(
+        release_notes.DEFAULT_CHANGELOG.read_text(encoding="utf-8")
+    )[0]
+    assert pyproject["project"]["version"] == top.version

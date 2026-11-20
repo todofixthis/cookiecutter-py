@@ -1,7 +1,7 @@
 ---
 status: Accepted
 date: 2026-11-17
-scope: [.github/workflows/, AGENTS.md, CHANGELOG.md, scripts/release_notes.py, test/test_release_notes.py]
+scope: [.github/workflows/, AGENTS.md, CHANGELOG.md, pyproject.toml, scripts/release_notes.py, test/test_release_notes.py]
 summary: Never tag by hand; every push to `main` is a release, which a workflow tags with the top CHANGELOG.md entry's bare-semver version as an unsigned annotated tag made with its own token, failing if that version already tags another commit, and publishes a matching GitHub Release; its `release-check` job on PRs into `main` stays outside `gate` and is required on `main` alone (ADR 018); `## ` headings in CHANGELOG.md are release entries only, and the version is not read from the release PR or a manual dispatch.
 revisit-when: Something that consumes this template starts verifying tag signatures; protecting tags needs a ruleset the workflow's token can't satisfy; a change needs to reach `main` other than by merging `develop`; a release needs to commit to `main` a file change `develop` lacks; a workflow needs to run when a release tag or GitHub Release is created.
 ---
@@ -139,6 +139,9 @@ version fail the second push.
   new top entry.
 - Tags after 1.3.0 are unsigned and made by `github-actions[bot]`. Earlier
   tags keep their signatures.
+- `pyproject.toml`'s `version` tracks the top entry, and a test fails `gate`
+  when the two differ. Nothing reads it, so the workflow takes the version from
+  CHANGELOG.md alone.
 - No backport release is possible: a version must be newer than every tag.
 - Editing an old entry on `develop` changes what later Renovate PRs quote, but
   not the tag or the GitHub Release made from it.
