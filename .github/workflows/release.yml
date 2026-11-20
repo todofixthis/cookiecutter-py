@@ -88,10 +88,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.release.outputs.version }}
+        # `--target` records the tagged commit on `main`; without it the Release
+        # names the default branch, `develop`, though the tag never points there.
         run: |
           if gh release view "$VERSION" >/dev/null 2>&1; then
             echo "⏭️ release $VERSION already published"
           else
-            gh release create "$VERSION" --verify-tag --title "$(cat "$RUNNER_TEMP/title.txt")" --notes-file "$RUNNER_TEMP/notes.md"
+            gh release create "$VERSION" --verify-tag --target "$GITHUB_SHA" --title "$(cat "$RUNNER_TEMP/title.txt")" --notes-file "$RUNNER_TEMP/notes.md"
             echo "✅ published release $VERSION"
           fi
