@@ -18,7 +18,7 @@ Delete an item on the branch that finishes its work. Nothing checks for stale it
 
 ## Architecture Decision Records
 
-When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `phx:writing-adrs` skill (from the phx plugin, which `.claude/settings.json` enables) for the format, conventions and tooling: its `adr.py` allocates the number, generates `docs/adr/INDEX.md` and validates the corpus. Where the skill isn't available (outside Claude Code, or the plugin isn't loaded), read the [skill](https://github.com/todofixthis/phx-claude-siat/blob/9.0.1/skills/writing-adrs/SKILL.md) and run the same tool as `phx-adr` (see Commands). Don't hand-edit the index or add a repo-local ADR script. ADRs live in `docs/adr/`.
+When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `phx:writing-adrs` skill (from the phx plugin, which `.claude/settings.json` enables) for the format, conventions and tooling: its `adr.py` allocates the number, generates `docs/adr/INDEX.md` and validates the corpus. Where the skill isn't available (outside Claude Code, or the plugin isn't loaded), read the [skill](https://github.com/todofixthis/phx-claude-siat/blob/9.1.0/skills/writing-adrs/SKILL.md) and run the same tool as `phx-adr` (see Commands). Don't hand-edit the index or add a repo-local ADR script. ADRs live in `docs/adr/`.
 
 ## Commands
 
@@ -54,19 +54,19 @@ Keep `--vcs-ref=HEAD`: without it copier bakes the newest release tag, not your 
 
 **In a worktree:** the shell can silently reset to the main checkout, so always prefix state-mutating commands (`uv add`/`sync`/`run`) with `cd <worktree> &&` to ensure they hit the worktree.
 
-The phx plugin's ADR tool, for use where the skill isn't available. Renovate bumps these pins and the `adrs` CI job's together, matching each on its trailing `# X.Y.Z` comment (ADR 009) — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.
+The phx plugin's ADR tool, for use where the skill isn't available. Renovate bumps these pins and the `adrs` CI job's together, matching each on its trailing `# X.Y.Z` comment (ADR 018) — keep that comment on the same line, despite the Code Comments rule below; moved or dropped, that pin silently stops being bumped.
 
 ```bash
 # Scaffold the next ADR
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@9b2367c1cd38734433e2be57727cde6d2d68f36a#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 9.0.1
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 9.1.0
 # List the decisions binding a path, before changing it
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@9b2367c1cd38734433e2be57727cde6d2d68f36a#subdirectory=skills/writing-adrs' phx-adr for path/to/file # 9.0.1
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr for path/to/file # 9.1.0
 # Mark an ADR superseded
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@9b2367c1cd38734433e2be57727cde6d2d68f36a#subdirectory=skills/writing-adrs' phx-adr supersede OLD --by NEW # 9.0.1
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr supersede OLD --by NEW # 9.1.0
 # Regenerate docs/adr/INDEX.md
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@9b2367c1cd38734433e2be57727cde6d2d68f36a#subdirectory=skills/writing-adrs' phx-adr index # 9.0.1
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr index # 9.1.0
 # Validate, as CI does
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@9b2367c1cd38734433e2be57727cde6d2d68f36a#subdirectory=skills/writing-adrs' phx-adr check # 9.0.1
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr check # 9.1.0
 ```
 
 If CI reports a stale index the session's own tool can't reproduce, the installed plugin (which tracks phx-claude-siat's `main`) and the pinned release differ. Compare the two versions: if the installed one is newer, merge Renovate's pending bump, or bump by hand: each pin to the release's commit, and its comment and the skill link above to the release's version. The commit is the `refs/tags/<version>^{}` line of `git ls-remote --tags https://github.com/todofixthis/phx-claude-siat`, not the tag object above it. Otherwise update the plugin.
@@ -118,10 +118,11 @@ Place comments on the line preceding the code they document, not as trailing com
 
 ## Releases
 
-1. Merge `develop` into `main` via PR.
-2. The maintainer tags the merge commit on `main` as `X.Y.Z` (bare semver, no `v` prefix). Agents don't tag; ask the maintainer.
+Merging `develop` into `main` is the release: `.github/workflows/release.yml` then tags the merge commit from the top `CHANGELOG.md` entry and publishes a GitHub Release with its notes (ADR 017), and Renovate offers that tag to every generated project, quoting the entry. Every push to `main` is a release, so nothing else merges into `main`: retarget any other PR into `main` to `develop`, ignoring its red Release check, and if one has already merged, stop and ask. Never tag by hand, even when asked: a hand tag on the wrong commit reaches every project unchecked. Say that merging the release PR does the tagging, and offer to prepare it.
 
-Renovate does the rest: it opens a PR updating each generated project to the new tag.
+1. On a branch off `develop`, prepend a `CHANGELOG.md` entry: a `## X.Y.Z - YYYY-MM-DD` heading (bare semver, no `v` prefix, today's date), a one-line theme, a blank line, then one bullet per change a generated project receives since the newest tag: a change under `template/` or to `copier.yml`'s questions or settings, the only files that shape a project. After `git fetch origin --tags`, list them with `git diff --stat "$(git tag --sort=-v:refname | head -n 1)"..origin/develop -- template copier.yml`; tags sit on `main`, so `git describe` from `develop` finds none. A large PR may take several bullets, and routine dependency bumps share one. Leave out everything else, this repo's own harness: the reader is a generated project's reviewer. If nothing in that diff changes what a project receives, there is nothing to release: say so and stop. For a major release, end the entry with the manual steps a project needs. Bump major for a release projects can't take with a plain `copier update`, minor for a new question or behaviour, otherwise patch. Confirm the version with the maintainer, then set `pyproject.toml`'s `version` to the same `X.Y.Z` and run `uv lock`: a test fails `gate` until the two match. Open a PR into `develop` for the entry and the bump, and leave its merge to the maintainer.
+2. Once the entry is on `develop`, open the `develop` → `main` PR and leave the merge to the maintainer. Its Release check runs the version checks early; if it fails, fix the cause (usually the entry) on `develop` rather than merging. A release ships everything on `develop`: if the maintainer wants only part of it (a fix ahead of unreleased features, say), stop and ask, since nothing here supports a hotfix branch. If `develop` gains a change a project receives before the merge, update the entry first, date included, and the `pyproject.toml` version if the bump level changes.
+3. After the merge, check the Release workflow run on `main`. The release is done once the tag and the GitHub Release both exist. A re-run uses the failed commit's `CHANGELOG.md`, workflow and script, so it fixes only a cause outside this repo (permissions, a GitHub outage): re-run for those. If the run failed before tagging for a cause inside this repo, fix it on `develop` and repeat from step 2; the same entry then tags the new merge commit. If the tag exists and the run failed after it for a cause inside this repo, stop and ask: a new merge commit can't take a version already tagged.
 
 ## Git Worktrees
 
