@@ -10,11 +10,11 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
-## 1.3.1 - 2026-11-18
+## 1.3.1 - 2026-11-21
 
-phx-adr 9.1.0 for generated projects
+phx-adr 9.1.0 and setup-uv 10.4.0 for generated projects
 
-- phx-adr 9.1.0 in the adrs job and AGENTS.md, including the skill link
+- phx-adr 9.1.0 in the adrs job and AGENTS.md (skill link included), and setup-uv 10.4.0 in build.yml
 
 ## 1.3.0 - 2026-11-18
 
