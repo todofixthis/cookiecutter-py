@@ -35,11 +35,11 @@ ADR 007 decides it, and its ADR 008 waits on a template ADR to replace 007.
 todofixthis/filters-iso's ADR 004 and todofixthis/filters-django's ADR 002
 each restate it inside their deferral to the template, waiting likewise.
 todofixthis/filters-pydantic's ADR 007 holds it too, in a project the
-maintainer means to generate from the template next. class-registry's 007 records what a repo-local tool cost: a generator
-ported from the skill, with a blocking pre-commit hook and its own CI job,
-wrote the index under a different first line, so the two could not run side
-by side, and a session that let the plugin write the index was reverted to get
-CI green.
+maintainer means to generate from the template next. class-registry's 007
+records what a repo-local tool cost: a generator ported from the skill, with
+a blocking pre-commit hook and its own CI job, wrote the index under a
+different first line, so the two could not run side by side, and a session
+that let the plugin write the index was reverted to get CI green.
 
 ## Options
 
@@ -55,7 +55,8 @@ The hooks in sessions; `phx-adr` at the pin in CI and AGENTS.md; nothing
 ADR-specific in a repository beyond the corpus and those pins.
 
 **Cons:** No local check blocks a faulty commit; a fault from a commit made
-outside a session with the plugin surfaces only in CI. Outside Claude Code
+outside a session with the plugin is blocked only in CI, though the next
+session reports it when it starts. Outside Claude Code
 nothing allocates a number or regenerates the index unless the author runs
 `phx-adr` by hand.
 
@@ -86,8 +87,9 @@ pin. In a session it turns the hooks' reports into a block, but the hooks
 already report a fault the session introduces to the agent making the
 commit, again before it finishes, so the block adds most where no hooks run:
 commits made outside a session on a machine with the plugin. A fault the
-branch already carried is left to CI either way, except that a hook checking
-the whole corpus would block every commit until someone fixed it.
+branch already carried is reported once when a session starts, then left to
+CI either way, except that a hook checking the whole corpus would block every
+commit until someone fixed it.
 
 ## Decision
 
