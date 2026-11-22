@@ -135,7 +135,7 @@ jobs:
 
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,
   # so this is the only check a commit made elsewhere meets (ADR 018).
-  # AGENTS.md rules out a repo-local copy of the tool. Renovate bumps the
+  # ADR 019 rules out a repo-local copy of the tool. Renovate bumps the
   # pinned release here, in AGENTS.md and in the template together; keep the
   # trailing version comment it matches on.
   adrs:
