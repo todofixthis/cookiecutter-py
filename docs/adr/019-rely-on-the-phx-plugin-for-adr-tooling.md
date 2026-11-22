@@ -19,7 +19,10 @@ names `phx:writing-adrs`. The same tool installs as `phx-adr`, which CI's
 `adrs` job and AGENTS.md's commands run at a pinned release ([ADR 018][]).
 [`.claude/settings.json`][] and the template's copy register phx-claude-siat's
 marketplace, whose manifest points the plugin at `main`, so sessions run its
-newest release, not the pin.
+newest release, not the pin. Sessions author nearly every ADR: all but one
+of the commits touching this repository's `docs/adr/` carry a Claude
+co-author trailer, and class-registry's and filters-pydantic's ADRs record
+the same.
 
 This repository and its template already work this way, and the template's
 AGENTS.md forbids a repo-local ADR script, pre-commit hook or vendored copy of
@@ -31,8 +34,8 @@ So the generated projects record it themselves. todofixthis/class-registry's
 ADR 007 decides it, and its ADR 008 waits on a template ADR to replace 007.
 todofixthis/filters-iso's ADR 004 and todofixthis/filters-django's ADR 002
 each restate it inside their deferral to the template, waiting likewise.
-todofixthis/filters-pydantic's ADR 007, adopting the template next, holds it
-too. class-registry's 007 records what a repo-local tool cost: a generator
+todofixthis/filters-pydantic's ADR 007 holds it too, in a project the
+maintainer means to generate from the template next. class-registry's 007 records what a repo-local tool cost: a generator
 ported from the skill, with a blocking pre-commit hook and its own CI job,
 wrote the index under a different first line, so the two could not run side
 by side, and a session that let the plugin write the index was reverted to get
@@ -41,9 +44,10 @@ CI green.
 ## Options
 
 Every option keeps CI's `adrs` job, so a faulty corpus is blocked at merge
-whichever is chosen, and every check pinned to a release disagrees with the
-plugin's hooks whenever a release outruns the pin. Neither ranks them; they
-differ in what runs before a commit.
+whichever is chosen. Every check pinned to a release disagrees with the
+plugin's hooks when a release outruns the pin and changes the index or its
+checks, and every form of the tool needs the network on its first run.
+Neither ranks them; they differ in what runs before a commit.
 
 ### Option 1: Rely on the plugin's tool, with nothing local (Accepted)
 
@@ -75,9 +79,11 @@ plugin's own `adr.py`, before each commit.
 **Cons:** At the pin, the hook rejects an index a newer session's tool just
 wrote whenever a release changes the index or its checks, blocking ADR
 commits until Renovate's bump lands, where Option 1 shows the same gap as one
-red CI check. Running the installed plugin instead, it checks only where the
-plugin's hooks already report. Its first run needs the network to fetch the
-tool.
+red CI check. Running the installed plugin instead, it must find the
+plugin's cache and environment, which exist only on a machine with the
+plugin, and skip silently everywhere else, so it adds a check only to that
+machine's commits made outside a session; it can still disagree with CI's
+pin.
 
 ## Decision
 
@@ -85,9 +91,9 @@ Option 1, recording what the template already does. One implementation of the
 conventions, maintained with the skill that states them, reaches every
 project. Option 2 pays for its local block with a copy that diverges as the
 skill moves. Option 3's pinned form turns the pin lag from a red CI check
-into blocked commits, and its unpinned form adds nothing the hooks don't
-report in the sessions that author nearly every ADR here and in the
-generated projects.
+into blocked commits, and its unpinned form only covers commits made outside
+a session, which author almost no ADRs here, on machines that run the
+sessions anyway.
 
 The skill owns the conventions, `scope` rather than `tags` among them, and
 `docs/adr/INDEX.md` is its tool's output: editing the index's first line
