@@ -10,6 +10,12 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.3.2 - 2026-11-22
+
+Correct the ADR citations generated projects carry
+
+- AGENTS.md, renovate.json and the adrs job comment in build.yml cite cookiecutter-py ADR 018 for the phx-adr pins, not the superseded ADR 009, and ADR 019 for the rule against a repo-local ADR tool or pre-commit hook; comments only, no behaviour changes
+
 ## 1.3.1 - 2026-11-21
 
 phx-adr 9.1.0 and setup-uv 10.4.0 for generated projects
