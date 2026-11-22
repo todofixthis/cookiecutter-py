@@ -83,9 +83,11 @@ red CI check. Running the installed plugin instead, it must find the
 plugin's cache and environment, which exist only on a machine with the
 plugin, and skip silently everywhere else; it can still disagree with CI's
 pin. In a session it turns the hooks' reports into a block, but the hooks
-already report a fault to the agent making the commit, again before it
-finishes, so the block adds most where no hooks run: commits made outside a
-session on a machine with the plugin.
+already report a fault the session introduces to the agent making the
+commit, again before it finishes, so the block adds most where no hooks run:
+commits made outside a session on a machine with the plugin. A fault the
+branch already carried is left to CI either way, except that a hook checking
+the whole corpus would block every commit until someone fixed it.
 
 ## Decision
 
