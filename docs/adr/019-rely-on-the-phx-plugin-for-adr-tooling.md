@@ -1,7 +1,7 @@
 ---
 status: Accepted
 date: 2026-11-22
-scope: [.autohooks/, .claude/settings.json, .github/workflows/, AGENTS.md, docs/adr/, pyproject.toml, scripts/, template/.autohooks/, template/.claude/settings.json, template/.github/workflows/, template/AGENTS.md, template/docs/adr/, template/pyproject.toml.jinja]
+scope: [.agents/skills/, .autohooks/, .claude/settings.json, .github/workflows/, AGENTS.md, docs/adr/, pyproject.toml, scripts/, template/.agents/skills/, template/.autohooks/, template/.claude/settings.json, template/.github/workflows/, template/AGENTS.md, template/docs/adr/, template/pyproject.toml.jinja]
 summary: This repository and every generated project index, validate and look up ADRs only with the phx plugin's writing-adrs tool, through its hooks in Claude Code sessions and its `phx-adr` entry point in CI and AGENTS.md (pinned as ADR 018 decides), never a repo-local generator, a vendored copy of the tool, or any pre-commit hook running ADR tooling; ADR frontmatter follows the skill's conventions (`scope`, not `tags`), and `docs/adr/INDEX.md` is the tool's output, never hand-edited.
 revisit-when: A phx plugin release imposes an ADR convention the maintainer rejects; ADRs in this repository or a generated project are routinely authored outside a Claude Code session with the plugin, so CI is the first check most of them meet; plugin releases routinely outrun the pin and leave CI red; sessions can install the plugin at the pinned release; the phx plugin drops its ADR tooling.
 ---
@@ -26,7 +26,7 @@ the same.
 
 This repository and its template already work this way, and the template's
 AGENTS.md forbids a repo-local ADR script, pre-commit hook or vendored copy of
-the tool. No ADR records why. The template's `adrs` job comment credits
+the tool. No ADR records why. The template's `adrs` job comment credited
 ADR 009, but neither 009 nor 018, which superseded it, decides it: they decide
 the CI job, its pin and `gate`.
 
@@ -46,8 +46,8 @@ CI green.
 Every option keeps CI's `adrs` job, so a faulty corpus is blocked at merge
 whichever is chosen. Every check pinned to a release disagrees with the
 plugin's hooks when a release outruns the pin and changes the index or its
-checks, and every form of the tool needs the network on its first run.
-Neither ranks them; they differ in what runs before a commit.
+checks, and every form that fetches the plugin's tool needs the network on
+its first run. Neither ranks them; they differ in what runs before a commit.
 
 ### Option 1: Rely on the plugin's tool, with nothing local (Accepted)
 
@@ -81,9 +81,11 @@ wrote whenever a release changes the index or its checks, blocking ADR
 commits until Renovate's bump lands, where Option 1 shows the same gap as one
 red CI check. Running the installed plugin instead, it must find the
 plugin's cache and environment, which exist only on a machine with the
-plugin, and skip silently everywhere else, so it adds a check only to that
-machine's commits made outside a session; it can still disagree with CI's
-pin.
+plugin, and skip silently everywhere else; it can still disagree with CI's
+pin. In a session it turns the hooks' reports into a block, but the hooks
+already report a fault to the agent making the commit, again before it
+finishes, so the block adds most where no hooks run: commits made outside a
+session on a machine with the plugin.
 
 ## Decision
 
@@ -91,9 +93,9 @@ Option 1, recording what the template already does. One implementation of the
 conventions, maintained with the skill that states them, reaches every
 project. Option 2 pays for its local block with a copy that diverges as the
 skill moves. Option 3's pinned form turns the pin lag from a red CI check
-into blocked commits, and its unpinned form only covers commits made outside
-a session, which author almost no ADRs here, on machines that run the
-sessions anyway.
+into blocked commits, and its unpinned form adds a block mostly where the
+hooks don't already report: commits made outside a session, which author
+almost no ADRs here.
 
 The skill owns the conventions, `scope` rather than `tags` among them, and
 `docs/adr/INDEX.md` is its tool's output: editing the index's first line
