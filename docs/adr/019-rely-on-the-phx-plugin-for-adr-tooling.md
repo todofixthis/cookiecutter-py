@@ -56,9 +56,8 @@ ADR-specific in a repository beyond the corpus and those pins.
 
 **Cons:** No local check blocks a faulty commit; a fault from a commit made
 outside a session with the plugin is blocked only in CI, though the next
-session reports it when it starts. Outside Claude Code
-nothing allocates a number or regenerates the index unless the author runs
-`phx-adr` by hand.
+session reports it. Outside Claude Code nothing allocates a number or
+regenerates the index unless the author runs `phx-adr` by hand.
 
 ### Option 2: A repo-local tool
 
