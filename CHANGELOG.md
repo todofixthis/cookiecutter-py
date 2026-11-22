@@ -14,7 +14,9 @@ the text as merged; a later edit here changes only what later Renovate PRs quote
 
 Correct the ADR citations generated projects carry
 
-- AGENTS.md, renovate.json and the adrs job comment in build.yml cite cookiecutter-py ADR 018 for the phx-adr pins, not the superseded ADR 009, and ADR 019 for the rule against a repo-local ADR tool or pre-commit hook; comments only, no behaviour changes
+- AGENTS.md, renovate.json and the adrs job comment in build.yml cite cookiecutter-py ADR 018 for the phx-adr pins, not the superseded ADR 009
+- AGENTS.md and the adrs job comment cite ADR 019 for the rule against a repo-local ADR tool, vendored copy or pre-commit hook running ADR tooling
+- Comments and descriptions only, no behaviour changes
 
 ## 1.3.1 - 2026-11-21
 
