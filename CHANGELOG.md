@@ -10,6 +10,16 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.4.0 - 2026-11-23
+
+Strict docs CI, a project-owned CI workflow, and a docs admonitions rule
+
+- Projects with their own docs site: the docs CI job and the documented docs-build commands build with `-W`, so a Sphinx warning fails `gate` before merge rather than only on ReadTheDocs, and the docs pre-commit hook drops `--keep-going`, which Sphinx 9 ignores (cookiecutter-py ADR 020). If the `docs` job fails on this update, fix the warnings it reports; ReadTheDocs was already failing on them
+- `build.yml` gains a `project` job that `gate` needs, calling a new `.github/workflows/project.yml`: a reusable workflow written once with a placeholder job, which the project then owns, so a job of the project's own blocks merges (cookiecutter-py ADR 021)
+- The template-owned rule sends a project's extra CI jobs to `project.yml`; move any job you put in a workflow of your own there to make it block merges. `project.yml` may ask for no permission beyond `contents: read`. A project that already had a `.github/workflows/project.yml` keeps it, and if it isn't a `workflow_call` workflow every CI job fails: rename it on the update's branch and re-run `copier update` to get the stub
+- Projects with their own docs site get `.agents/rules/docs-admonitions.md`, on when and how to use RST admonitions in `docs/`
+- The seed docs index's Python-support note becomes prose; a project that changed its `docs/index.rst` may see that hunk conflict, so keep its own version. `.gitignore` spells "optimised"
+
 ## 1.3.2 - 2026-11-22
 
 Correct the ADR citations generated projects carry

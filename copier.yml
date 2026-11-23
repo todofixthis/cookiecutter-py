@@ -7,9 +7,11 @@ _envops:
   variable_start_string: "[["
 _preserve_symlinks: true
 # Written on first copy, then the project's own: `copier update` never touches
-# it, so local rules survive template releases (ADR 010).
+# them, so local rules (ADR 010) and CI jobs (ADR 021) survive template
+# releases.
 _skip_if_exists:
   - .agents/rules/project.md
+  - .github/workflows/project.yml
 _subdirectory: template
 _templates_suffix: .jinja
 

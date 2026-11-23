@@ -232,6 +232,44 @@ def test_agents_md_names_only_existing_dirs(baked_project: Path) -> None:
                 assert (baked_project / path).exists(), path
 
 
+def test_ci_calls_the_project_workflow(each_bake: Path) -> None:
+    """``build.yml`` calls the project's own workflow, which is reusable."""
+    assert load_ci_jobs(each_bake)["project"]["uses"] == (
+        "./.github/workflows/project.yml"
+    )
+    project_workflow = yaml.safe_load(
+        (each_bake / ".github" / "workflows" / "project.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    # PyYAML reads the bare key `on` as the boolean True.
+    assert "workflow_call" in project_workflow[True]
+
+
+def test_project_workflow_survives_update(
+    committed_bake: Path, template_repo: Path
+) -> None:
+    """copier update leaves the project's own CI workflow as the project wrote it."""
+    project_workflow = committed_bake / ".github" / "workflows" / "project.yml"
+    project_workflow.write_text("x", encoding="utf-8")
+    subprocess.run(
+        ["git", "commit", "--quiet", "--all", "-m", "Edit"],
+        check=True,
+        cwd=committed_bake,
+    )
+
+    release_template_change(
+        template_repo,
+        "template/.github/workflows/project.yml",
+        lambda text: text + "# A line the template adds later.\n",
+    )
+
+    answers = update_project(committed_bake)
+
+    assert project_workflow.read_text(encoding="utf-8") == "x"
+    assert "_commit: 0.0.2" in answers
+
+
 def test_project_rules_survive_update(
     committed_bake: Path, template_repo: Path
 ) -> None:
@@ -297,6 +335,7 @@ def test_ci_job_names(baked_project: Path) -> None:
         "lint",
         "docs",
         "adrs",
+        "project",
         "gate",
     }
 
@@ -448,6 +487,7 @@ def test_gitignore_covers_release_files(baked_project: Path, name: str) -> None:
 def test_without_docs_site_bakes_no_sphinx_site(baked_without_docs_site: Path) -> None:
     """Answering no to ``docs_site`` leaves out every Sphinx and ReadTheDocs file."""
     for path in (
+        ".agents/rules/docs-admonitions.md",
         ".autohooks/docs_build.py",
         ".readthedocs.yaml",
         "docs/Makefile",
@@ -467,6 +507,7 @@ def test_without_docs_site_ci_has_no_docs_job(baked_without_docs_site: Path) -> 
         "type-check",
         "lint",
         "adrs",
+        "project",
         "gate",
     }
 
