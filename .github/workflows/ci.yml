@@ -130,7 +130,7 @@ jobs:
           UV_PYTHON: ${{ matrix.python-version }}
         run: |
           mkdir -p _static
-          uv run make html
+          uv run make html SPHINXOPTS="-W --keep-going"
         working-directory: /tmp/baked/my-python-project/docs
 
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,

@@ -92,11 +92,15 @@ jobs:
           python-version: "[[ python_version ]]"
       - name: Install dependencies
         run: uv sync --group ci
+      # -W fails the job on a Sphinx warning, as ReadTheDocs'
+      # fail_on_warning does after merge. A bot PR, such as Renovate's
+      # automerged lock refresh, never runs the pre-commit docs build, so
+      # this is its only check (ADR 020 in todofixthis/cookiecutter-py).
       - name: Check docs build
         run: |
           cd docs
           mkdir -p _static
-          uv run make html
+          uv run make html SPHINXOPTS="-W --keep-going"
 [%- endif %]
 
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,
