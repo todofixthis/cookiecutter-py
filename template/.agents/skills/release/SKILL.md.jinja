@@ -64,7 +64,7 @@ Release notes do not satisfy this gate. They are read once, by people who alread
 ls docs/upgrading_to_v<major>.rst                        # exists
 [%- if docs_site %]
 rg 'upgrading_to_v<major>' docs/index.rst README.rst     # index: toctree + alert; README: alert
-uv run make -C docs clean && uv run make -C docs html    # builds, and it isn't orphaned
+uv run make -C docs clean && uv run make -C docs html SPHINXOPTS="-W --keep-going"    # builds, and it isn't orphaned
 [%- else %]
 rg 'upgrading_to_v<major>' README.rst                    # README: alert
 [%- endif %]
