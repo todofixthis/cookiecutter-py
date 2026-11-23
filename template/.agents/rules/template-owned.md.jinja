@@ -1,10 +1,12 @@
 ---
 paths:
-  - ".agents/rules/template-owned.md"
+[% if docs_site %]  - ".agents/rules/docs-admonitions.md"
+[% endif %]  - ".agents/rules/template-owned.md"
   - ".agents/rules/testing.md"
   - ".agents/skills/release/SKILL.md"
   - ".agents/skills/rotate-python-versions/SKILL.md"
 [% if docs_site %]  - ".autohooks/docs_build.py"
+[% endif %][% if docs_site %]  - ".claude/rules/docs-admonitions.md"
 [% endif %]  - ".claude/rules/template-owned.md"
   - ".claude/rules/testing.md"
   - ".claude/settings.json"
