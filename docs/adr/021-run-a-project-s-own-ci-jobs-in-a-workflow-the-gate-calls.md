@@ -1,7 +1,7 @@
 ---
 status: Accepted
 date: 2026-11-23
-scope: [copier.yml, scripts/template_owned.py, template/.github/workflows/]
+scope: [AGENTS.md, copier.yml, scripts/template_owned.py, template/.github/workflows/]
 summary: A generated project's own CI jobs go in .github/workflows/project.yml, a reusable workflow (on workflow_call) that copier writes once as a stub and the project then owns (_skip_if_exists), which the template-owned build.yml calls as its `project` job, passing its secrets through, and `gate` needs; not a separate workflow outside `gate`, a project-owned build.yml, or a second required check.
 revisit-when: A project's own job needs more permissions than build.yml grants its caller; copier stops honouring `_skip_if_exists` on update; GitHub lets a ruleset require every check in a workflow, or `needs` reach across workflow files; todofixthis/terraform-github-repository gains a per-repository list of required checks.
 ---

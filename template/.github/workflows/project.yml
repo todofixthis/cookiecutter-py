@@ -4,10 +4,12 @@
 # todofixthis/cookiecutter-py). Another workflow of this project's, such as a
 # scheduled one, can call it too.
 #
-# Keep this file and at least one job in it: without them build.yml's call,
-# and so `gate`, fails before any job runs. Ask for no permission beyond
-# `contents: read`, which build.yml grants its call; asking for more fails
-# build.yml's run the same way.
+# Keep this file and at least one job in it: without them build.yml is
+# invalid and none of its jobs run, `gate` included. Ask for no permission
+# beyond `contents: read`, which build.yml grants its call; asking for more
+# fails build.yml's run the same way. A job that may have nothing to do
+# skips its steps, never itself: `gate` sees only this workflow's overall
+# result, which a skipped job doesn't fail.
 name: Project CI
 
 on:
@@ -23,9 +25,7 @@ env:
   UV_NO_DEFAULT_GROUPS: "1"
 
 jobs:
-  # A job that may have nothing to do skips its steps, never itself: `gate`
-  # sees only this workflow's overall result, which a skipped job doesn't
-  # fail. Replace this placeholder with the project's own jobs.
+  # Replace this placeholder with the project's own jobs.
   placeholder:
     runs-on: ubuntu-latest
 
