@@ -42,14 +42,18 @@ def test_committed_rule_is_current() -> None:
 
 
 def test_rule_lists_every_template_owned_file(each_bake: Path) -> None:
-    """A bake's rule lists every baked file except the seeds and project.md."""
+    """A bake's rule lists every baked file except seeds and first-copy-only files."""
     seeds = {
         template_owned.CONDITIONAL_NAME.sub(r"\g<name>", seed).replace(
             "[[ package_name ]]", "my_python_project"
         )
         for seed in template_owned.SEED_FILES
     }
-    first_copy_only = {".agents/rules/project.md", ".claude/rules/project.md"}
+    first_copy_only = {
+        ".agents/rules/project.md",
+        ".claude/rules/project.md",
+        ".github/workflows/project.yml",
+    }
 
     expected = baked_paths(each_bake) - seeds - first_copy_only
 
