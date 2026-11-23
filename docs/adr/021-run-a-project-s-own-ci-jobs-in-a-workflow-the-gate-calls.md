@@ -3,7 +3,7 @@ status: Accepted
 date: 2026-11-23
 scope: [copier.yml, scripts/template_owned.py, template/.github/workflows/]
 summary: A generated project's own CI jobs go in .github/workflows/project.yml, a reusable workflow (on workflow_call) that copier writes once as a stub and the project then owns (_skip_if_exists), which the template-owned build.yml calls as its `project` job, passing its secrets through, and `gate` needs; not a separate workflow outside `gate`, a project-owned build.yml, or a second required check.
-revisit-when: A project's own job needs more permissions than build.yml grants its caller; GitHub lets a ruleset require every check in a workflow, or `needs` reach across workflow files; todofixthis/terraform-github-repository gains a per-repository list of required checks.
+revisit-when: A project's own job needs more permissions than build.yml grants its caller; copier stops honouring `_skip_if_exists` on update; GitHub lets a ruleset require every check in a workflow, or `needs` reach across workflow files; todofixthis/terraform-github-repository gains a per-repository list of required checks.
 ---
 
 # 021: Run a Project's Own CI Jobs in a Workflow the Gate Calls
@@ -40,8 +40,12 @@ never again (`_skip_if_exists`, as [ADR 010][] does for `project.md`).
 needs that job.
 
 **Cons:** Every project runs a placeholder job until it adds its own. The
-call job inherits `build.yml`'s permissions (`contents: read`), which the
-called workflow can narrow but not raise.
+call job grants `build.yml`'s permissions (`contents: read`); a called
+workflow asking for more fails `build.yml`'s run before any job starts.
+`gate` sees only the called workflow's overall result, which a skipped
+inner job doesn't fail, so ADR 018's guard against a silently skipped job
+doesn't reach inside it. A template fix to the stub, like one to
+`project.md`, reaches new projects only.
 
 ### Option 3: A project-owned `build.yml`
 
@@ -72,12 +76,16 @@ of its own, such as a weekly schedule.
   `project.yml`, and its test counts `project.yml` among the
   first-copy-only files, with `project.md`.
 - ADR 018's rule that every job in `build.yml` goes in `gate`'s `needs`
-  covers the `project` call job; a job inside `project.yml` that may have
-  nothing to do skips its steps, not itself, since `gate` fails on a
-  skipped result.
-- A project job that needs more permissions than `contents: read`, or a
-  trigger `build.yml` lacks, is a template candidate, or runs in a workflow
-  of the project's own that calls `project.yml`.
+  covers the `project` call job. A job inside `project.yml` that may have
+  nothing to do skips its steps, not itself, since a skipped inner job
+  passes `gate` unseen; the stub's comments say so, and that the file and
+  at least one job must stay.
+- The stub repeats `build.yml`'s `UV_NO_DEFAULT_GROUPS`, since a caller's
+  workflow-level `env` doesn't reach a called workflow.
+- A project job that needs a trigger `build.yml` lacks, such as a weekly
+  schedule, runs from a workflow of the project's own that calls
+  `project.yml`. One that needs more permissions than `contents: read` is a
+  template candidate.
 - Existing projects get the stub on their next template update, since
   `_skip_if_exists` skips only a file that already exists.
 

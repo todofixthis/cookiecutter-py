@@ -3,6 +3,11 @@
 # copier writes this file once; template updates never touch it (ADR 021 in
 # todofixthis/cookiecutter-py). Another workflow of this project's, such as a
 # scheduled one, can call it too.
+#
+# Keep this file and at least one job in it: without them build.yml's call,
+# and so `gate`, fails before any job runs. Ask for no permission beyond
+# `contents: read`, which build.yml grants its call; asking for more fails
+# build.yml's run the same way.
 name: Project CI
 
 on:
@@ -11,9 +16,16 @@ on:
 permissions:
   contents: read
 
+# build.yml's own env doesn't reach a called workflow, so this repeats it:
+# every uv command leaves out the default `dev` group, whose tooling can lack
+# wheels for a new Python.
+env:
+  UV_NO_DEFAULT_GROUPS: "1"
+
 jobs:
-  # A called workflow needs at least one job. Replace this one with the
-  # project's own.
+  # A job that may have nothing to do skips its steps, never itself: `gate`
+  # sees only this workflow's overall result, which a skipped job doesn't
+  # fail. Replace this placeholder with the project's own jobs.
   placeholder:
     runs-on: ubuntu-latest
 

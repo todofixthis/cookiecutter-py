@@ -120,15 +120,15 @@ jobs:
       - name: Check ADRs
         run: uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr check # 9.1.0
 
-  # The single required status check. Depending on every job here collapses
-  # their results into one, so branch protection requires only `gate`. A
-  # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   # This project's own jobs, in project.yml, which copier writes once and the
   # project then owns (ADR 021 in todofixthis/cookiecutter-py).
   project:
     uses: ./.github/workflows/project.yml
     secrets: inherit
 
+  # The single required status check. Depending on every job here collapses
+  # their results into one, so branch protection requires only `gate`. A
+  # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   gate:
     needs: [adrs, [% if docs_site %]docs, [% endif %]lint, project, test, type-check]
     if: always()

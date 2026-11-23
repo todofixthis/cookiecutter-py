@@ -67,8 +67,8 @@ cookiecutter-py.
 If it does, make the change here. A rule for this project goes in
 `.agents/rules/project.md`, never in a templated rules file; an extra CI job
 goes in `.github/workflows/project.yml`, which build.yml calls and `gate`
-requires, so the job blocks merges. Both of those files are this project's
-own, written once by the template.
+requires, so the job blocks merges. `project.md` and `project.yml` are this
+project's own, written once by the template.
 
 If it doesn't, the change is a template candidate, however local the symptom
 that brought it up: a fix for a problem any generated project could hit is a
