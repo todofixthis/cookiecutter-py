@@ -2,7 +2,7 @@
 status: Accepted
 date: 2026-11-23
 scope: [.github/workflows/ci.yml, template/.agents/skills/release/, template/.autohooks/, template/.github/workflows/build.yml.jinja, template/AGENTS.md, template/README.rst.jinja, template/pyproject.toml.jinja]
-summary: A generated project with its own docs site fails on any Sphinx warning both before commit, through the docs_build autohooks plugin running sphinx-build -W --keep-going -E on staged docs and docstring changes only, and in CI, whose docs job runs make html with SPHINXOPTS="-W --keep-going", as this repository's bake of the project and every documented docs-build command do; neither check alone, and never a lenient build left to ReadTheDocs' fail_on_warning after merge.
+summary: A generated project with its own docs site fails on any Sphinx warning both before commit, through the docs_build autohooks plugin running sphinx-build -W -E on staged docs and docstring changes only, and in CI, whose docs job runs make html with SPHINXOPTS=-W, as this repository's bake of the project and every documented docs-build command do; neither check alone, and never a lenient build left to ReadTheDocs' fail_on_warning after merge.
 revisit-when: A generated project's autohooks pre-commit chain grows a cheaper way to catch a broken docs build than a full Sphinx rebuild; lock-refresh PRs repeatedly go red on warnings or intersphinx fetches unrelated to the project's own docs.
 ---
 
@@ -26,7 +26,7 @@ theme into a new warning passes `gate`, merges, and breaks the published
 docs.
 
 Verified in a project baked from this repository: an unresolved `:ref:`
-fails `make html SPHINXOPTS="-W --keep-going"` with exit 2, while plain
+fails `make html SPHINXOPTS=-W` with exit 2, while plain
 `make html` exits 0; the unmodified docs pass both. An orphaned page, which
 the release skill's migration-guide check exists to catch, also only warns.
 
@@ -49,10 +49,11 @@ build on the default branch.
 
 ### Option 2: `-W` in CI as well as the hook (Accepted)
 
-Keep 007's hook and add `SPHINXOPTS="-W --keep-going"` to the generated
-project's docs job, to this repository's bake of it, and to every docs-build
-command the template documents. `--keep-going` reports every warning in one
-run rather than stopping at the first.
+Keep 007's hook and add `SPHINXOPTS=-W` to the generated project's docs
+job, to this repository's bake of it, and to every docs-build command the
+template documents. Since Sphinx 8.1, `-W` finishes the build and reports
+every warning before failing; `--keep-going`, which once did that, is a
+hidden no-op the hook drops too.
 
 **Cons:** The hook still fails a docs-affecting commit made offline, or
 while `intersphinx` can't fetch its inventory, for a reason unrelated to
@@ -91,7 +92,7 @@ What 007 decided about the hook stands, restated here:
 
 - The template's `docs` job, `ci.yml`'s build of the baked project's docs,
   and the docs-build commands in the template's AGENTS.md, README and
-  release skill pass `SPHINXOPTS="-W --keep-going"`; the `docs_build`
+  release skill pass `SPHINXOPTS=-W`; the `docs_build`
   plugin and its `pyproject.toml` entry cite this ADR.
 - A Sphinx or theme release that adds a warning, or an `intersphinx` fetch
   that fails, turns the weekly lock refresh red instead of merging it, and

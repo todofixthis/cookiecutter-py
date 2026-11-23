@@ -100,7 +100,7 @@ jobs:
         run: |
           cd docs
           mkdir -p _static
-          uv run make html SPHINXOPTS="-W --keep-going"
+          uv run make html SPHINXOPTS=-W
 [%- endif %]
 
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,

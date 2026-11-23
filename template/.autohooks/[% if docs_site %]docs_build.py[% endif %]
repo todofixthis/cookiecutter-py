@@ -41,7 +41,6 @@ def precommit(
         "-b",
         "html",
         "-W",
-        "--keep-going",
         # Force a full re-read on every run: an unchanged file that a
         # previous build already read keeps whatever it registered then
         # (e.g. an autosectionlabel target), so a warning a *different*
