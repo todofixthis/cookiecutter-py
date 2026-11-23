@@ -1,0 +1,22 @@
+# This project's own CI jobs. build.yml calls this workflow, and its `gate`
+# job requires the call, so a job here blocks merges like any template job.
+# copier writes this file once; template updates never touch it (ADR 021 in
+# todofixthis/cookiecutter-py). Another workflow of this project's, such as a
+# scheduled one, can call it too.
+name: Project CI
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # A called workflow needs at least one job. Replace this one with the
+  # project's own.
+  placeholder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Report no project jobs
+        run: echo "⏭️ No project-specific CI jobs."
