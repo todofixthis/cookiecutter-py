@@ -487,6 +487,7 @@ def test_gitignore_covers_release_files(baked_project: Path, name: str) -> None:
 def test_without_docs_site_bakes_no_sphinx_site(baked_without_docs_site: Path) -> None:
     """Answering no to ``docs_site`` leaves out every Sphinx and ReadTheDocs file."""
     for path in (
+        ".agents/rules/docs-admonitions.md",
         ".autohooks/docs_build.py",
         ".readthedocs.yaml",
         "docs/Makefile",
