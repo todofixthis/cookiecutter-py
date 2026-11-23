@@ -128,9 +128,10 @@ jobs:
         if: matrix.docs-site
         env:
           UV_PYTHON: ${{ matrix.python-version }}
+        # -W matches the generated project's own docs job (ADR 020).
         run: |
           mkdir -p _static
-          uv run make html
+          uv run make html SPHINXOPTS=-W
         working-directory: /tmp/baked/my-python-project/docs
 
   # The phx plugin's hooks check ADRs in Claude Code sessions but never block,
