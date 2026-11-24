@@ -10,6 +10,7 @@ from .conftest import (
     PYTHON_POLICY,
     TEMPLATE_ROOT,
     release_template_change,
+    run_conflict_marker_check,
     run_python_policy_check,
     update_project,
 )
@@ -37,6 +38,36 @@ def test_update_applies_template_change(
     assert new_line in readme
     assert old_line not in readme
     assert "_commit: 0.0.2" in answers
+
+
+def test_conflicting_update_fails_conflict_marker_check(
+    committed_bake: Path, template_repo: Path
+) -> None:
+    """A release conflicting with a local edit fails the baked conflict-marker step."""
+    assert run_conflict_marker_check(committed_bake) == 0
+    readme = committed_bake / "README.rst"
+    readme.write_text(
+        readme.read_text(encoding="utf-8").replace("\nTODO\n", "\nA local line.\n"),
+        encoding="utf-8",
+    )
+    subprocess.run(
+        ["git", "commit", "--quiet", "--all", "-m", "Local edit"],
+        check=True,
+        cwd=committed_bake,
+    )
+    release_template_change(
+        template_repo,
+        "template/README.rst.jinja",
+        lambda text: text.replace("\nTODO\n", "\nA template line.\n"),
+    )
+
+    update_project(committed_bake)
+
+    assert any(
+        line.startswith("<" * 7)
+        for line in readme.read_text(encoding="utf-8").splitlines()
+    )
+    assert run_conflict_marker_check(committed_bake) == 1
 
 
 def test_policy_release_keeps_python_version_and_fails_check(

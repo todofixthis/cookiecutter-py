@@ -165,3 +165,18 @@ def run_python_policy_check(project: Path) -> int:
     return subprocess.run(
         ["bash", "-e", "-c", step["run"]], capture_output=True, check=False
     ).returncode
+
+
+def run_conflict_marker_check(project: Path) -> int:
+    """Runs the baked conflict-marker CI step in ``project``; returns its exit code."""
+    workflow = yaml.safe_load(
+        (project / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+    )
+    (step,) = [
+        step
+        for step in workflow["jobs"]["lint"]["steps"]
+        if step.get("name") == "Check for conflict markers"
+    ]
+    return subprocess.run(
+        ["bash", "-e", "-c", step["run"]], capture_output=True, check=False, cwd=project
+    ).returncode
