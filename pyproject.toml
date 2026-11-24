@@ -42,10 +42,17 @@ extend-exclude = ["template"]
 
 [tool.autohooks]
 mode = "pythonpath"
-# regenerate_template_owned runs first: it may regenerate and stage the rule,
-# which pytest then checks is current.
+# Comment on an entry here, above `pre-commit`, never inside the array:
+# `autohooks activate --force` rewrites the array sorted onto one line,
+# dropping any comment inside it. Hooks run in list order, so keep the list
+# sorted: run order is then alphabetical, and survives that rewrite. To run a
+# hook earlier, give it, or a local plugin wrapping it, a name that sorts there.
+#
+# `_regenerate_template_owned` must run first: it may regenerate and stage
+# the rule, which pytest then checks is current. Its leading underscore sorts
+# it before every other entry.
 pre-commit = [
-    "regenerate_template_owned",
+    "_regenerate_template_owned",
     "autohooks.plugins.black",
     "autohooks.plugins.mypy",
     "autohooks.plugins.pytest",

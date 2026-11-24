@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import tomllib
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
@@ -41,6 +42,16 @@ def test_committed_rule_is_current() -> None:
     assert RULE_TEMPLATE.read_text() == template_owned.render()
 
 
+def test_regenerating_plugin_runs_first_after_any_sort() -> None:
+    """The pre-commit list is already sorted, with the regenerating plugin first."""
+    config = tomllib.loads((TEMPLATE_ROOT / "pyproject.toml").read_text())
+    hooks: list[str] = config["tool"]["autohooks"]["pre-commit"]
+    # `autohooks activate --force` rewrites the list sorted, so only a sorted
+    # list keeps its order.
+    assert hooks == sorted(hooks), "See the comment above pyproject.toml's pre-commit."
+    assert hooks[0] == "_regenerate_template_owned"
+
+
 def test_rule_lists_every_template_owned_file(each_bake: Path) -> None:
     """A bake's rule lists every baked file except seeds and first-copy-only files."""
     seeds = {
@@ -72,8 +83,8 @@ def test_generator_rejects_a_seed_naming_no_file(
 
 def load_plugin(repo: Path) -> ModuleType:
     """Load the regenerating autohooks plugin from a copy of this repo."""
-    path = repo / ".autohooks" / "regenerate_template_owned.py"
-    spec = importlib.util.spec_from_file_location("regenerate_template_owned", path)
+    path = repo / ".autohooks" / "_regenerate_template_owned.py"
+    spec = importlib.util.spec_from_file_location("_regenerate_template_owned", path)
     assert spec is not None and spec.loader is not None
     plugin = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(plugin)
