@@ -10,6 +10,13 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.5.0 - 2026-11-25
+
+Fail CI on committed conflict markers
+
+- The `lint` CI job gains a step that fails when a tracked file has a line starting with `<<<<<<<` or `>>>>>>>`, so a template update whose merge conflicted, this one included, fails `gate` until someone resolves the markers on its branch (cookiecutter-py ADR 022). A commit there by anyone but Renovate stops Renovate rebasing the PR, so merge it promptly. The step ignores `=======`, a common reStructuredText heading underline. If it fails on this update, resolve the conflict markers it lists, and underline any heading drawn with seven `<` or `>` characters with another character. The step has no exclusion list, so a project that must commit such a line raises it upstream
+- In `pyproject.toml`, the comments on the autohooks `pre-commit` array sit above it, where `autohooks activate --force`, which rewrites the array sorted onto one line, can't drop them; the comment on `docs_build` moves there from inside the array. The comments also note that no hook may rely on running before another. A project that edited its `pre-commit` list, or ran `autohooks activate --force`, may see that hunk conflict: keep its own entries, and take the comments above the array
+
 ## 1.4.0 - 2026-11-23
 
 Strict docs CI, a project-owned CI workflow, and a docs admonitions rule
