@@ -18,6 +18,7 @@ from .conftest import (
     TEMPLATE_ROOT,
     bake,
     release_template_change,
+    run_conflict_marker_check,
     run_python_policy_check,
     update_project,
 )
@@ -338,6 +339,25 @@ def test_ci_job_names(baked_project: Path) -> None:
         "project",
         "gate",
     }
+
+
+def test_conflict_marker_check_ignores_rst_underline(baked_project: Path) -> None:
+    """The conflict-marker step passes a seven-character RST heading underline."""
+    (baked_project / "heading.rst").write_text("Heading\n=======\n", encoding="utf-8")
+    subprocess.run(["git", "init", "--quiet"], check=True, cwd=baked_project)
+    subprocess.run(["git", "add", "--all"], check=True, cwd=baked_project)
+
+    assert run_conflict_marker_check(baked_project) == 0
+
+
+def test_conflict_marker_check_fails_outside_git(
+    baked_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The conflict-marker step fails, not passes, where ``git grep`` errors."""
+    # Stops git finding a repository above the bake, which it would then search.
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(baked_project.parent))
+
+    assert run_conflict_marker_check(baked_project) not in (0, 1)
 
 
 def test_ci_has_gate_needing_every_job(each_bake: Path) -> None:
