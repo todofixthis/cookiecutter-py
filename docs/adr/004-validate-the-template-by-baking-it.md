@@ -1,8 +1,11 @@
 ---
-status: Accepted
+status: Superseded
 date: 2026-08-29
-scope: [test/, .github/workflows/generate-and-validate.yml]
+scope:
+  - test/
+  - .github/workflows/generate-and-validate.yml
 summary: Validate the template by actually baking a project with cookiecutter and running its own lint/type-check/test/docs-build, not just static checks on the template files.
+superseded-by: 8
 ---
 
 # 004: Validate the Template by Baking It

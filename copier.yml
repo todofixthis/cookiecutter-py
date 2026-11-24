@@ -1,0 +1,122 @@
+_envops:
+  block_end_string: "%]"
+  block_start_string: "[%"
+  comment_end_string: "#]"
+  comment_start_string: "[#"
+  variable_end_string: "]]"
+  variable_start_string: "[["
+_preserve_symlinks: true
+# Written on first copy, then the project's own: `copier update` never touches
+# them, so local rules (ADR 010) and CI jobs (ADR 021) survive template
+# releases.
+_skip_if_exists:
+  - .agents/rules/project.md
+  - .github/workflows/project.yml
+_subdirectory: template
+_templates_suffix: .jinja
+
+# Questions run alphabetically, except that a question whose default names an
+# answer placed after it in this file moves to straight after the last such
+# answer, alphabetically among any others moved there. copier renders defaults
+# in file order, and a default naming a later answer either fails a
+# `--defaults` bake or silently renders that answer empty (`pypi_project_name`
+# would become `phx-`).
+author_email:
+  type: str
+  default: phx@phx.nz
+
+author_name:
+  type: str
+  default: Phoenix Zerin
+
+copyright_holder:
+  type: str
+  default: "[[ author_name ]]"
+
+# Recorded rather than computed from today's date, so a project's copyright
+# notice doesn't move on every `copier update` (ADR 015).
+copyright_year:
+  type: int
+  validator: "[% if copyright_year < 1000 or copyright_year > 9999 %]Must be a 4-digit year[% endif %]"
+
+# Whether this project publishes its own Sphinx site on ReadTheDocs. Answer
+# no where another project's site documents it, as filters' documents
+# filters-iso: no `docs/` Sphinx files, `.readthedocs.yaml`, `docs` CI job or
+# `docs_build` hook, and `readthedocs_slug` names that other site (ADR 016).
+docs_site:
+  type: bool
+  default: true
+
+github_username:
+  type: str
+  default: todofixthis
+
+project_name:
+  type: str
+  default: My Python Project
+
+github_project_name:
+  type: str
+  default: "[[ project_name.lower().replace(' ', '-') ]]"
+
+package_name:
+  type: str
+  default: "[[ project_name.lower().replace(' ', '_') ]]"
+
+project_short_description:
+  type: str
+
+pypi_project_name:
+  type: str
+  default: "phx-[[ github_project_name ]]"
+
+# The newest Python release the template's policy supports (ADR 015). A
+# computed value, so every template release re-renders it in every project,
+# where the `python-policy` CI job compares it with `python_version`.
+python_policy:
+  type: str
+  default: "3.14"
+  when: false
+
+# The newest Python release this project supports; it supports the two before
+# it too (ADR 001, restated by ADR 015). Recorded rather than read from the
+# host interpreter, so `copier update` never moves a project's Python floor:
+# an agent session rotates it with the project's `rotate-python-versions`
+# skill (ADR 015).
+python_version:
+  type: str
+  default: "[[ python_policy ]]"
+  # A block scalar, so YAML leaves the backslashes alone and Jinja's string
+  # literal unescapes `\\.` to the regex's `\.`.
+  validator: >-
+    [% if not (python_version | regex_search('^3\\.\\d+$')) %]Must look like 3.N[% endif %]
+
+python_major:
+  type: str
+  default: "[[ python_version.split('.')[0] ]]"
+  when: false
+
+python_minor:
+  type: str
+  default: "[[ python_version.split('.')[1] ]]"
+  when: false
+
+# The ReadTheDocs subdomain documenting this project. Where `docs_site` is no
+# it names another project's site, with no default, since only the answerer
+# knows which; otherwise it is the project's own, by default the PyPI name
+# without its `phx-` prefix (filters.readthedocs.io, not phx-filters).
+# filters and class-registry first shipped unprefixed at a former employer,
+# which abandoned them without taking them down; the maintainer forked them
+# and repointed the old ReadTheDocs domains at the forks. Once copied from
+# this template, each records its own answer, so changing this default won't
+# move their slugs on update; it keeps new projects in the same URL style as
+# those two.
+readthedocs_slug:
+  type: str
+  default: "[% if docs_site %][[ pypi_project_name | regex_replace('^phx-', '') ]][% endif %]"
+  validator: "[% if not readthedocs_slug %]Name the ReadTheDocs site that documents this project[% endif %]"
+
+# Seeds `__version__`; without it hatchling's dynamic version renders empty.
+version:
+  type: str
+  default: 0.1.0

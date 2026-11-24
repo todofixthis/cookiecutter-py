@@ -1,0 +1,20 @@
+{
+  "enabledPlugins": {
+    "phx@todofixthis": true,
+    "superpowers@superpowers-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
+    },
+    "todofixthis": {
+      "source": {
+        "source": "github",
+        "repo": "todofixthis/phx-claude-siat"
+      }
+    }
+  }
+}

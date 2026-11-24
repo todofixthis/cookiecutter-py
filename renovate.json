@@ -1,7 +1,49 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "todofixthis/phx-claude-siat",
+      "description": "Bump the phx-adr pins in CI, the root AGENTS.md and the template together (ADR 018).",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+        "/^template/\\.github/workflows/[^/]+\\.jinja$/",
+        "/^(template/)?AGENTS\\.md$/"
+      ],
+      "matchStrings": [
+        "phx-claude-siat@(?<currentDigest>[0-9a-f]{40})#subdirectory=skills/writing-adrs'[^\\n]*# (?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "phx-claude-siat/blob/(?<currentValue>\\d+\\.\\d+\\.\\d+)/"
+      ]
+    }
+  ],
   "extends": [
     "config:recommended",
-    "helpers:pinGitHubActionDigests"
-  ]
+    "helpers:pinGitHubActionDigests",
+    "security:minimumReleaseAgePypi"
+  ],
+  "github-actions": {
+    "managerFilePatterns": [
+      "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+      "/^template/\\.github/workflows/[^/]+\\.ya?ml(\\.jinja)?$/"
+    ]
+  },
+  "lockFileMaintenance": {
+    "automerge": true,
+    "description": "Refresh uv.lock weekly, merging once CI passes, so transitive dependencies reach the harness without a direct pin, as the template's projects do (ADR 013).",
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Never bump Python: CI's versions follow copier.yml's python_policy, which the rotate-python-versions skill moves (ADR 015).",
+      "enabled": false,
+      "matchDepNames": ["python"]
+    }
+  ],
+  "pep621": {
+    "managerFilePatterns": [
+      "/(^|/)pyproject\\.toml$/",
+      "/^template/pyproject\\.toml\\.jinja$/"
+    ]
+  }
 }

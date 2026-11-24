@@ -1,8 +1,11 @@
 ---
-status: Accepted
+status: Superseded
 date: 2026-08-29
-scope: [cookiecutter.json, hooks/pre_prompt.py, "{{ cookiecutter.github_project_name }}/pyproject.toml"]
+scope:
+  - copier.yml
+  - template/pyproject.toml.jinja
 summary: Generated projects support the three most recent Python minor releases, computed dynamically from whichever interpreter runs cookiecutter.
+superseded-by: 8
 ---
 
 # 001: Support the Three Most Recent Python Minor Releases

@@ -1,95 +1,42 @@
 """Bakes the template with default answers and checks the output is well-formed."""
 
+import json
 import os
 import re
 import shutil
 import subprocess
 import tomllib
-from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
+import copier
 import pytest
-from cookiecutter.main import cookiecutter
+import yaml
 
-TEMPLATE_ROOT = Path(__file__).resolve().parent.parent
+from .conftest import (
+    PYTHON_POLICY,
+    TEMPLATE_ROOT,
+    bake,
+    release_template_change,
+    run_conflict_marker_check,
+    run_python_policy_check,
+    update_project,
+)
 
-# Anything of this shape surviving in a baked file means cookiecutter's Jinja
-# pass missed it — the whole point of baking is that none of this remains.
-RE_UNRENDERED_JINJA = re.compile(r"\{\{.*cookiecutter[^}]*\}\}")
-
-
-def copy_tracked_files(checkout: Path, dest: Path) -> None:
-    """Copies the files git tracks in a checkout, as they stand on disk.
-
-    Args:
-        checkout: Root of the git checkout to copy from.
-        dest: Directory to copy into; created if missing.
-
-    Note:
-        Untracked files are left behind, including new template files not yet
-        `git add`-ed.
-    """
-    ls_files = subprocess.run(
-        ["git", "ls-files", "-z"],
-        capture_output=True,
-        check=True,
-        cwd=checkout,
-        text=True,
-    )
-    for rel_path in filter(None, ls_files.stdout.split("\0")):
-        source = checkout / rel_path
-        # Tracked but deleted in the working tree.
-        if not os.path.lexists(source):
-            continue
-        target = dest / rel_path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target, follow_symlinks=False)
+# Anything of this shape surviving in a baked file means copier's Jinja pass
+# missed it — the whole point of baking is that none of this remains. Template
+# markers always carry inner spaces, so TOML's `[[tool.x]]` arrays of tables
+# don't match; the last branch catches a file the port forgot to rename to
+# `.jinja`, whose cookiecutter markers would otherwise copy through verbatim.
+RE_UNRENDERED_JINJA = re.compile(r"\[\[ .*? \]\]|\[% .*? %\]|\{\{ *cookiecutter\.")
 
 
-def bake(template_root: Path, workspace: Path) -> Path:
-    """Bakes a template checkout's git-tracked files with their default answers.
-
-    Because the template has a pre_prompt hook, cookiecutter copies the whole
-    template directory before running it, and that copy fails on any dangling
-    symlink — e.g. in a venv built on another machine. Baking from a copy of
-    the tracked files keeps whatever else sits in the checkout out of reach.
-
-    Args:
-        template_root: Root of the template's git checkout.
-        workspace: Empty directory to stage and bake in.
-
-    Returns:
-        The generated project's directory.
-    """
-    staged_template = workspace / "template"
-    copy_tracked_files(template_root, staged_template)
-    output_dir = cookiecutter(
-        str(staged_template),
-        no_input=True,
-        output_dir=str(workspace / "baked"),
-    )
-    return Path(output_dir)
-
-
-@pytest.fixture
-def baked_project(tmp_path: Path) -> Iterator[Path]:
-    """Bakes the template with its default answers into a temp directory."""
-    yield bake(TEMPLATE_ROOT, tmp_path)
-
-
-@pytest.fixture
-def dirty_checkout(tmp_path: Path) -> Path:
-    """A git checkout of the template holding venvs built on another machine."""
-    checkout = tmp_path / "checkout"
-    copy_tracked_files(TEMPLATE_ROOT, checkout)
-    subprocess.run(["git", "init", "--quiet"], cwd=checkout, check=True)
-    subprocess.run(["git", "add", "--all"], cwd=checkout, check=True)
-
-    for venv_name in (".venv", ".venv.local"):
-        venv_bin = checkout / venv_name / "bin"
-        venv_bin.mkdir(parents=True)
-        (venv_bin / "python").symlink_to("/nonexistent/uv/python/bin/python3")
-    return checkout
+def test_unrendered_regex() -> None:
+    """The regex catches template markers but not TOML tables or GitHub expressions."""
+    for marker in ("[[ x ]]", "[% if x %]", "{{ cookiecutter.x }}"):
+        assert RE_UNRENDERED_JINJA.search(marker), marker
+    for non_marker in ("[[tool.x]]", "${{ matrix.x }}"):
+        assert not RE_UNRENDERED_JINJA.search(non_marker), non_marker
 
 
 def test_bakes_without_error(baked_project: Path) -> None:
@@ -97,22 +44,106 @@ def test_bakes_without_error(baked_project: Path) -> None:
     assert baked_project.is_dir()
 
 
-def test_leaves_no_unrendered_jinja(baked_project: Path) -> None:
-    """No `{{ cookiecutter.* }}` markers survive rendering in any generated file."""
+def test_bake_leaves_out_ignored_junk(template_repo: Path, tmp_path: Path) -> None:
+    """Gitignored venvs inside template/ stay out of a bake of the dirty tree."""
+    # copier bakes a dirty checkout by committing its working tree in a clone,
+    # so only .gitignore keeps a venv inside template/ out of the bake; their
+    # dangling interpreter symlinks are copied as symlinks, so they never fail
+    # the bake the way cookiecutter's copy did.
+    shutil.copy2(TEMPLATE_ROOT / ".gitignore", template_repo / ".gitignore")
+    subprocess.run(["git", "add", ".gitignore"], check=True, cwd=template_repo)
+    subprocess.run(
+        ["git", "commit", "--quiet", "-m", "Ignore"], check=True, cwd=template_repo
+    )
+    junk = (".venv", ".venv.local")
+    for venv_name in junk:
+        venv_bin = template_repo / "template" / venv_name / "bin"
+        venv_bin.mkdir(parents=True)
+        (venv_bin / "python").symlink_to("/nonexistent/uv/python/bin/python3")
+
+    output_dir = tmp_path / "junk-bake"
+    copier.run_copy(
+        str(template_repo),
+        output_dir,
+        data={"copyright_year": 2026, "project_short_description": "x"},
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+
+    assert (output_dir / "pyproject.toml").is_file()
+    assert not any(os.path.lexists(output_dir / name) for name in junk)
+
+
+def test_leaves_no_unrendered_jinja(each_bake: Path) -> None:
+    """No template markers survive rendering in any generated file."""
     offenders = [
-        str(path.relative_to(baked_project))
-        for path in baked_project.rglob("*")
+        str(path.relative_to(each_bake))
+        for path in each_bake.rglob("*")
         if path.is_file()
         and RE_UNRENDERED_JINJA.search(path.read_text(encoding="utf-8"))
     ]
     assert offenders == []
 
 
-def test_generates_valid_pyproject_toml(baked_project: Path) -> None:
+def test_generates_valid_pyproject_toml(each_bake: Path) -> None:
     """The generated project's pyproject.toml parses and names the PyPI package."""
-    with (baked_project / "pyproject.toml").open("rb") as f_in:
+    with (each_bake / "pyproject.toml").open("rb") as f_in:
         data = tomllib.load(f_in)
     assert data["project"]["name"] == "phx-my-python-project"
+
+
+def test_docs_links_use_readthedocs_slug(baked_project: Path) -> None:
+    """ReadTheDocs links use the PyPI name without its `phx-` prefix."""
+    # copier.yml's `readthedocs_slug` comment says why the prefix goes.
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    expected = "https://my-python-project.readthedocs.io/"
+    assert data["project"]["urls"]["Documentation"] == expected
+    for path in ("README.rst", ".agents/skills/release/SKILL.md"):
+        text = (baked_project / path).read_text(encoding="utf-8")
+        assert "phx-my-python-project.readthedocs" not in text, path
+        assert "projects/phx-my-python-project/" not in text, path
+
+
+@pytest.mark.parametrize(
+    ("pypi_project_name", "slug"),
+    [("phx-class-registry", "class-registry"), ("widgets", "widgets")],
+)
+def test_readthedocs_slug_strips_phx_prefix(
+    tmp_path: Path, pypi_project_name: str, slug: str
+) -> None:
+    """The ReadTheDocs slug defaults to the PyPI name without a leading `phx-`."""
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        tmp_path,
+        data={
+            "copyright_year": 2026,
+            "project_short_description": "x",
+            "pypi_project_name": pypi_project_name,
+        },
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    with (tmp_path / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    expected = f"https://{slug}.readthedocs.io/"
+    assert data["project"]["urls"]["Documentation"] == expected
+
+
+def test_uv_trusts_system_certs(baked_project: Path) -> None:
+    """The generated project's uv reads system certificates, as Leash needs."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    assert data["tool"]["uv"]["system-certs"] is True
+
+
+def test_uv_waits_for_releases_to_age(baked_project: Path) -> None:
+    """The generated project's uv resolves only releases at least 3 days old."""
+    with (baked_project / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    assert data["tool"]["uv"]["exclude-newer"] == "3 days"
 
 
 def test_generates_expected_package_layout(baked_project: Path) -> None:
@@ -129,13 +160,17 @@ def test_generates_licence(baked_project: Path) -> None:
     assert "MIT" in licence_text
 
 
-def test_claude_md_stays_a_symlink(baked_project: Path) -> None:
-    """CLAUDE.md survives baking as a real symlink to AGENTS.md, not a copy.
+def test_writes_answers_file(baked_project: Path) -> None:
+    """The generated project records the template it came from."""
+    answers_file = baked_project / ".copier-answers.yml"
+    assert answers_file.is_file()
+    # Read line by line rather than with PyYAML, which ships no type stubs.
+    lines = answers_file.read_text(encoding="utf-8").splitlines()
+    assert f"_src_path: {TEMPLATE_ROOT}" in lines
 
-    cookiecutter's own file-copy mechanism dereferences symlinks in the
-    template into independent copies; hooks/post_gen_project.py restores
-    this one so AGENTS.md stays the single canonical source.
-    """
+
+def test_claude_md_stays_a_symlink(baked_project: Path) -> None:
+    """CLAUDE.md survives baking as a real symlink to AGENTS.md, not a copy."""
     claude_md = baked_project / "CLAUDE.md"
     assert claude_md.is_symlink()
     assert claude_md.readlink() == Path("AGENTS.md")
@@ -148,6 +183,426 @@ def test_claude_skills_stays_a_symlink(baked_project: Path) -> None:
     assert claude_skills.readlink() == Path("..") / ".agents" / "skills"
 
 
-def test_bakes_despite_untracked_junk(dirty_checkout: Path, tmp_path: Path) -> None:
-    """Untracked venvs with dangling interpreter symlinks don't break the bake."""
-    assert bake(dirty_checkout, tmp_path / "workspace").is_dir()
+def test_readthedocs_syncs_into_rtd_env(baked_project: Path) -> None:
+    """ReadTheDocs syncs into its own virtualenv via UV_PROJECT_ENVIRONMENT."""
+    config = (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
+    assert "UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH" in config
+    assert "VIRTUAL_ENV=$READTHEDOCS" not in config
+
+
+def test_rotate_skill_searches_hidden_dirs(baked_project: Path) -> None:
+    """Every rg command in the rotate skill searching the whole tree passes --hidden."""
+    skill = baked_project / ".agents" / "skills" / "rotate-python-versions" / "SKILL.md"
+    rg_lines = [
+        line
+        for line in skill.read_text(encoding="utf-8").splitlines()
+        if line.lstrip().startswith("rg ") and " . " in line
+    ]
+    assert rg_lines
+    assert all("--hidden" in line for line in rg_lines), rg_lines
+
+
+def test_claude_rules_stays_a_symlink(baked_project: Path) -> None:
+    """.claude/rules survives baking as a real symlink into .agents/rules."""
+    claude_rules = baked_project / ".claude" / "rules"
+    assert claude_rules.is_symlink()
+    assert claude_rules.readlink() == Path("..") / ".agents" / "rules"
+
+
+def test_settings_use_shared_marketplace_key(baked_project: Path) -> None:
+    """Settings enable superpowers under the marketplace key config-claude uses."""
+    settings = json.loads(
+        (baked_project / ".claude" / "settings.json").read_text(encoding="utf-8")
+    )
+    plugins = settings["enabledPlugins"]
+    assert "superpowers@superpowers-marketplace" in plugins
+    assert "superpowers@obra" not in plugins
+
+
+def test_agents_md_names_only_existing_dirs(baked_project: Path) -> None:
+    """Every path Getting Started names exists, bar the optional plans dir."""
+    agents_md = (baked_project / "AGENTS.md").read_text(encoding="utf-8")
+    section = agents_md.split("## Getting Started", 1)[1].split("\n## ", 1)[0]
+    entries = [line for line in section.splitlines() if line.startswith("- ")]
+    assert entries
+    for line in entries:
+        for path in re.findall(r"`([^`\s]+/[^`\s]*)`", line):
+            if path == "docs/superpowers/plans/":
+                assert "if one exists" in line, line
+            else:
+                assert (baked_project / path).exists(), path
+
+
+def test_ci_calls_the_project_workflow(each_bake: Path) -> None:
+    """``build.yml`` calls the project's own workflow, which is reusable."""
+    assert load_ci_jobs(each_bake)["project"]["uses"] == (
+        "./.github/workflows/project.yml"
+    )
+    project_workflow = yaml.safe_load(
+        (each_bake / ".github" / "workflows" / "project.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    # PyYAML reads the bare key `on` as the boolean True.
+    assert "workflow_call" in project_workflow[True]
+
+
+def test_project_workflow_survives_update(
+    committed_bake: Path, template_repo: Path
+) -> None:
+    """copier update leaves the project's own CI workflow as the project wrote it."""
+    project_workflow = committed_bake / ".github" / "workflows" / "project.yml"
+    project_workflow.write_text("x", encoding="utf-8")
+    subprocess.run(
+        ["git", "commit", "--quiet", "--all", "-m", "Edit"],
+        check=True,
+        cwd=committed_bake,
+    )
+
+    release_template_change(
+        template_repo,
+        "template/.github/workflows/project.yml",
+        lambda text: text + "# A line the template adds later.\n",
+    )
+
+    answers = update_project(committed_bake)
+
+    assert project_workflow.read_text(encoding="utf-8") == "x"
+    assert "_commit: 0.0.2" in answers
+
+
+def test_project_rules_survive_update(
+    committed_bake: Path, template_repo: Path
+) -> None:
+    """copier update leaves a project's own rules file as the project wrote it."""
+    project_rules = committed_bake / ".agents" / "rules" / "project.md"
+    project_rules.write_text("x", encoding="utf-8")
+    subprocess.run(
+        ["git", "commit", "--quiet", "--all", "-m", "Edit"],
+        check=True,
+        cwd=committed_bake,
+    )
+
+    release_template_change(
+        template_repo,
+        "template/.agents/rules/project.md.jinja",
+        lambda text: text + "A line the template adds later.\n",
+    )
+
+    answers = update_project(committed_bake)
+
+    assert project_rules.read_text(encoding="utf-8") == "x"
+    assert "_commit: 0.0.2" in answers
+
+
+def test_ci_leaves_out_dev_group(each_bake: Path) -> None:
+    """Every uv command in CI leaves out `dev`, whose tooling can lack wheels."""
+    workflow = yaml.safe_load(
+        (each_bake / ".github/workflows/build.yml").read_text(encoding="utf-8")
+    )
+    assert workflow["env"]["UV_NO_DEFAULT_GROUPS"] == "1"
+
+
+def test_ci_lints(each_bake: Path) -> None:
+    """CI's ``lint`` job runs ``ruff check`` and ``black --check``."""
+    runs = {step.get("run") for step in load_ci_jobs(each_bake)["lint"]["steps"]}
+    assert {"uv run ruff check", "uv run black --check ."} <= runs
+
+
+def test_readthedocs_pins_python_and_leaves_out_dev(baked_project: Path) -> None:
+    """ReadTheDocs builds on the newest tested Python, without the `dev` group."""
+    config = yaml.safe_load(
+        (baked_project / ".readthedocs.yaml").read_text(encoding="utf-8")
+    )
+    assert config["build"]["tools"]["python"] == PYTHON_POLICY
+    (sync,) = config["build"]["jobs"]["post_install"]
+    assert "uv sync --no-default-groups --group ci" in sync
+
+
+def load_ci_jobs(project: Path) -> dict[str, dict[str, Any]]:
+    """Parses the baked ``build.yml`` and returns its jobs by name."""
+    workflow = yaml.safe_load(
+        (project / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+    )
+    jobs: dict[str, dict[str, Any]] = workflow["jobs"]
+    return jobs
+
+
+def test_ci_job_names(baked_project: Path) -> None:
+    """CI runs exactly the jobs the template documents."""
+    assert set(load_ci_jobs(baked_project)) == {
+        "test",
+        "type-check",
+        "lint",
+        "docs",
+        "adrs",
+        "project",
+        "gate",
+    }
+
+
+def test_conflict_marker_check_ignores_rst_underline(baked_project: Path) -> None:
+    """The conflict-marker step passes a seven-character RST heading underline."""
+    (baked_project / "heading.rst").write_text("Heading\n=======\n", encoding="utf-8")
+    subprocess.run(["git", "init", "--quiet"], check=True, cwd=baked_project)
+    subprocess.run(["git", "add", "--all"], check=True, cwd=baked_project)
+
+    assert run_conflict_marker_check(baked_project) == 0
+
+
+def test_conflict_marker_check_fails_outside_git(
+    baked_project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The conflict-marker step fails, not passes, where ``git grep`` errors."""
+    # Stops git finding a repository above the bake, which it would then search.
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(baked_project.parent))
+
+    assert run_conflict_marker_check(baked_project) not in (0, 1)
+
+
+def test_ci_has_gate_needing_every_job(each_bake: Path) -> None:
+    """The ``gate`` job aggregates every other job and fails on a non-success."""
+    jobs = load_ci_jobs(each_bake)
+    gate = jobs["gate"]
+    assert set(gate["needs"]) == set(jobs) - {"gate"}
+    assert gate["if"] == "always()"
+    fail_conditions = [step.get("if", "") for step in gate["steps"]]
+    assert any(
+        all(result in condition for result in ("failure", "cancelled", "skipped"))
+        for condition in fail_conditions
+    )
+
+
+def test_python_policy_skips_renovate_but_template_updates(
+    baked_project: Path,
+) -> None:
+    """``python-policy`` runs on branches, skipping Renovate's but template updates."""
+    workflow = yaml.safe_load(
+        (baked_project / ".github" / "workflows" / "python-policy.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    # PyYAML reads the bare key `on` as the boolean True.
+    assert workflow[True] == {"push": {"branches": ["**"]}}
+    assert workflow["jobs"]["python-policy"]["if"] == (
+        "${{ !startsWith(github.ref_name, 'renovate/')"
+        " || contains(github.ref_name, 'cookiecutter-py') }}"
+    )
+
+
+@pytest.mark.parametrize(("minor_offset", "exit_code"), [(-1, 1), (0, 0), (1, 0)])
+def test_python_policy_fails_only_behind_policy(
+    tmp_path: Path, minor_offset: int, exit_code: int
+) -> None:
+    """The ``python-policy`` job fails only when ``python_version`` lags the policy."""
+    major, minor = PYTHON_POLICY.split(".")
+    copier.run_copy(
+        str(TEMPLATE_ROOT),
+        tmp_path,
+        data={
+            "copyright_year": 2026,
+            "project_short_description": "x",
+            "python_version": f"{major}.{int(minor) + minor_offset}",
+        },
+        defaults=True,
+        vcs_ref="HEAD",
+        unsafe=False,
+    )
+    assert run_python_policy_check(tmp_path) == exit_code
+
+
+def test_ci_never_checks_template_drift(baked_project: Path) -> None:
+    """No file under the baked ``.github/`` mentions ``copier-answers``."""
+    # A drift check behind `gate` would fail every PR once a template release
+    # lands; Renovate's update PR is how template drift reaches a project.
+    offenders = [
+        path.relative_to(baked_project)
+        for path in (baked_project / ".github").rglob("*")
+        if path.is_file() and "copier-answers" in path.read_text(encoding="utf-8")
+    ]
+    assert not offenders
+
+
+def test_adr_pin_is_sha_with_version(baked_project: Path) -> None:
+    """The ``adrs`` job pins a commit SHA with a trailing version comment."""
+    # Read as text: `yaml.safe_load` strips the trailing comment, which
+    # Renovate matches on.
+    text = (baked_project / ".github" / "workflows" / "build.yml").read_text(
+        encoding="utf-8"
+    )
+    assert re.search(
+        r"phx-claude-siat@[0-9a-f]{40}#subdirectory=skills/writing-adrs'"
+        r" phx-adr check # \d+\.\d+\.\d+",
+        text,
+    )
+
+
+def test_renovate_manages_adr_pin(baked_project: Path) -> None:
+    """Renovate bumps the phx-adr pin in CI and AGENTS.md together."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    manager = config["customManagers"][0]
+    assert manager["datasourceTemplate"] == "github-tags"
+    assert manager["managerFilePatterns"] == [
+        "/^\\.github/workflows/build\\.yml$/",
+        "/^AGENTS\\.md$/",
+    ]
+
+
+def test_renovate_maintains_lock_file(baked_project: Path) -> None:
+    """Renovate refreshes ``uv.lock`` and merges the refresh once CI passes."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    assert config["lockFileMaintenance"]["enabled"] is True
+    assert config["lockFileMaintenance"]["automerge"] is True
+
+
+def test_renovate_waits_for_releases_to_age(baked_project: Path) -> None:
+    """Renovate raises a PyPI update only once uv's cooldown would allow it."""
+    config = json.loads((baked_project / "renovate.json").read_text(encoding="utf-8"))
+    assert "security:minimumReleaseAgePypi" in config["extends"]
+
+
+def read_release_skill(project: Path) -> str:
+    """Return the baked release skill's text."""
+    path = project / ".agents" / "skills" / "release" / "SKILL.md"
+    return path.read_text(encoding="utf-8")
+
+
+def test_release_skill_derives_key_fingerprint(baked_project: Path) -> None:
+    """The release skill reads the fingerprint from a signature before signing notes."""
+    skill = read_release_skill(baked_project)
+    assert "Key fingerprint: `<fingerprint>`" in skill
+    derive = skill.index('$2 == "VALIDSIG" {print $12}')
+    check = skill.index("if curl -fsSL https://github.com/todofixthis.gpg \\")
+    clearsign = skill.index("--clearsign release-<version>.md")
+    assert derive < check < clearsign
+
+
+def test_release_skill_writes_notes_file(baked_project: Path) -> None:
+    """The release skill writes release-<version>.md before first reading it."""
+    skill = read_release_skill(baked_project)
+    notes_file = "release-<version>.md"
+    assert notes_file in skill
+    assert skill.index(f"write them to `{notes_file}`") < skill.index("--body-file")
+
+
+def test_release_skill_single_checksums_heading(baked_project: Path) -> None:
+    """The release skill does not append a second checksums heading."""
+    skill = read_release_skill(baked_project)
+    assert 'echo -e "\\n# SHA256 Checksums"' not in skill
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["release-2.0.0.md", "release-2.0.0-body.md", "release-2.0.0.md.asc"],
+)
+def test_gitignore_covers_release_files(baked_project: Path, name: str) -> None:
+    """Git ignores the release skill's working files."""
+    subprocess.run(["git", "init", "-q"], cwd=baked_project, check=True)
+    result = subprocess.run(
+        ["git", "check-ignore", "-q", name], cwd=baked_project, check=False
+    )
+    assert result.returncode == 0
+
+
+def test_without_docs_site_bakes_no_sphinx_site(baked_without_docs_site: Path) -> None:
+    """Answering no to ``docs_site`` leaves out every Sphinx and ReadTheDocs file."""
+    for path in (
+        ".agents/rules/docs-admonitions.md",
+        ".autohooks/docs_build.py",
+        ".readthedocs.yaml",
+        "docs/Makefile",
+        "docs/api.rst",
+        "docs/conf.py",
+        "docs/index.rst",
+    ):
+        assert not (baked_without_docs_site / path).exists(), path
+    assert (baked_without_docs_site / "docs" / "adr" / "INDEX.md").is_file()
+    assert [p.name for p in (baked_without_docs_site / "docs").iterdir()] == ["adr"]
+
+
+def test_without_docs_site_ci_has_no_docs_job(baked_without_docs_site: Path) -> None:
+    """A project with no docs site runs every CI job but ``docs``."""
+    assert set(load_ci_jobs(baked_without_docs_site)) == {
+        "test",
+        "type-check",
+        "lint",
+        "adrs",
+        "project",
+        "gate",
+    }
+
+
+def test_without_docs_site_pyproject_drops_sphinx(
+    baked_without_docs_site: Path,
+) -> None:
+    """No Sphinx dependency, docs_build hook or docs sdist entry is generated."""
+    with (baked_without_docs_site / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    for group in ("ci", "dev"):
+        deps = data["dependency-groups"][group]
+        assert not [d for d in deps if d.startswith("sphinx")], group
+    assert "docs_build" not in data["tool"]["autohooks"]["pre-commit"]
+    sdist = data["tool"]["hatch"]["build"]["targets"]["sdist"]
+    assert "docs" not in sdist["include"]
+    assert "exclude" not in sdist
+    assert "exclude" not in data["tool"]["hatch"]["build"]["targets"]["wheel"]
+
+
+def test_without_docs_site_documentation_url(baked_without_docs_site: Path) -> None:
+    """The Documentation URL and README point at the site ``readthedocs_slug``
+    names, which documents the project from elsewhere."""
+    expected = "https://parent-project.readthedocs.io/"
+    with (baked_without_docs_site / "pyproject.toml").open("rb") as f_in:
+        urls = tomllib.load(f_in)["project"]["urls"]
+    assert urls["Documentation"] == expected
+    readme = (baked_without_docs_site / "README.rst").read_text(encoding="utf-8")
+    assert f"Documentation is available at {expected}." in readme
+
+
+def test_without_docs_site_requires_readthedocs_slug(tmp_path: Path) -> None:
+    """A no-docs-site bake fails without a ``readthedocs_slug``, whose default
+    would name a site that doesn't exist."""
+    with pytest.raises(ValueError, match="readthedocs_slug"):
+        bake(tmp_path / "out", docs_site=False)
+
+
+def test_without_docs_site_records_answers(baked_without_docs_site: Path) -> None:
+    """The answers file records ``docs_site`` and ``readthedocs_slug``."""
+    answers = yaml.safe_load(
+        (baked_without_docs_site / ".copier-answers.yml").read_text(encoding="utf-8")
+    )
+    assert answers["docs_site"] is False
+    assert answers["readthedocs_slug"] == "parent-project"
+
+
+# What a docs instruction or link looks like. AGENTS.md is exempt: it is the
+# same in every project, so it names its docs commands with their condition.
+RE_DOCS_SITE_INSTRUCTION = re.compile(
+    r"make -C docs|make html|toctree|docs/conf\.py|docs/index\.rst|my-python-project\.readthedocs"
+)
+DOCS_SITE_INSTRUCTION_EXEMPT = {"AGENTS.md", "CLAUDE.md"}
+
+
+def docs_site_instructions(project: Path) -> set[str]:
+    """List the files in ``project`` naming its docs build, pages or site."""
+    return {
+        path.relative_to(project).as_posix()
+        for path in project.rglob("*")
+        if path.is_file()
+        and ".git" not in path.parts
+        and path.relative_to(project).as_posix() not in DOCS_SITE_INSTRUCTION_EXEMPT
+        and RE_DOCS_SITE_INSTRUCTION.search(path.read_text(encoding="utf-8"))
+    }
+
+
+def test_with_docs_site_has_docs_instructions(baked_project: Path) -> None:
+    """The default bake's README and release skill name its docs, so the
+    no-docs-site check below has something to miss."""
+    assert {"README.rst", ".agents/skills/release/SKILL.md"} <= (
+        docs_site_instructions(baked_project)
+    )
+
+
+def test_without_docs_site_names_no_docs_site(baked_without_docs_site: Path) -> None:
+    """No generated file but AGENTS.md tells a no-docs-site project to build docs."""
+    assert docs_site_instructions(baked_without_docs_site) == set()

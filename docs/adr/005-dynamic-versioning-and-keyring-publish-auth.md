@@ -1,8 +1,11 @@
 ---
 status: Accepted
 date: 2026-09-03
-scope: ["{{ cookiecutter.github_project_name }}/pyproject.toml", "{{ cookiecutter.github_project_name }}/src/{{ cookiecutter.package_name }}/__init__.py", "{{ cookiecutter.github_project_name }}/.agents/skills/release/SKILL.md"]
-summary: Generated projects source their version from `__init__.py` via `[tool.hatch.version]` instead of a static `pyproject.toml` field, matching paddock rather than the template's other five siblings; `[tool.uv] keyring-provider = "subprocess"` is added alongside it to close a gap those siblings had already closed.
+scope:
+  - template/pyproject.toml.jinja
+  - template/src/
+  - template/.agents/skills/release/SKILL.md.jinja
+summary: Dynamic versioning is the standard every library adopts with the template, static-version siblings included; projects source their version from `__init__.py` via `[tool.hatch.version]` instead of a static `pyproject.toml` field, matching paddock, with `[tool.uv] keyring-provider = "subprocess"` added alongside it to close a gap the other siblings had already closed.
 revisit-when: a future decision standardises every sibling project, paddock included, on one versioning convention that isn't paddock's dynamic one.
 ---
 
@@ -72,7 +75,8 @@ retroactively.
 ## Decision
 
 Option 2, per the maintainer's direction. Paddock, not the five
-static-version packages, is the template's reference going forward.
+static-version packages, is the template's reference going forward. Widened on
+2026-10-10 to every library; see Consequences.
 
 ## Consequences
 
@@ -87,6 +91,9 @@ static-version packages, is the template's reference going forward.
 - `cookiecutter.json`'s `version` key is unchanged — it still seeds the
   generated project's initial version, just into `__init__.py` instead of
   `pyproject.toml`.
+- On 2026-10-10 the maintainer made this the standard for every library, not
+  only for new projects: each static-version sibling moves to it when it
+  adopts the template under ADR 008.
 
 [todofixthis/cookiecutter-py#2]: https://github.com/todofixthis/cookiecutter-py/pull/2
 [todofixthis/paddock#9]: https://github.com/todofixthis/paddock/pull/9
