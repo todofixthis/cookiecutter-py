@@ -14,7 +14,7 @@ the text as merged; a later edit here changes only what later Renovate PRs quote
 
 Release steps that work with a dynamic version
 
-- `README.rst`'s release steps set `__version__`, merge it into `main` through `develop`, then build and tag from an up-to-date `main`. The old steps ran `uv version`, which fails on the template's dynamic version, and tagged without committing the bump. The update also adds the blank line that makes the checklist under "Write a description" render as a list. If your project already rewrote these steps, the hunk may conflict: keep your steps if they already commit the bump before tagging, otherwise take the template's
+- `README.rst`'s release steps set `__version__`, merge it into `main` through `develop`, then build and tag from an up-to-date `main`. The old steps ran `uv version`, which fails on the template's dynamic version, and tagged without committing the bump. The update also adds the blank line that makes the checklist under "Write a description" render as a list. If your project already rewrote these steps, the hunk may conflict: keep your steps if they already commit the bump before tagging, adding that blank line, otherwise take the template's
 
 ## 1.6.0 - 2026-11-25
 
