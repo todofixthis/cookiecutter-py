@@ -1,7 +1,7 @@
 ---
 status: Accepted
 date: 2026-11-25
-scope: [template/.agents/skills/release/, template/pyproject.toml.jinja]
+scope: [template/.agents/skills/release/, template/pyproject.toml.jinja, test/test_bake.py]
 summary: Generated projects carry no Development Status classifier, leaving the version's PEP 440 pre-release segment to state it; not one the release skill updates, and not one a Hatchling metadata hook derives from the version at build time.
 revisit-when: pip, uv, PyPI or another tool the maintainer relies on starts acting on the Development Status classifier.
 ---
