@@ -10,6 +10,12 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.6.1 - 2026-11-25
+
+Release steps that work with a dynamic version
+
+- `README.rst`'s release steps set `__version__`, merge it into `main` through `develop`, then build and tag from an up-to-date `main`. The old steps ran `uv version`, which fails on the template's dynamic version, and tagged without committing the bump. The update also adds the blank line that makes the checklist under "Write a description" render as a list. If your project already rewrote these steps, the hunk may conflict: keep your steps if they already commit the bump before tagging, otherwise take the template's
+
 ## 1.6.0 - 2026-11-25
 
 A release skill that works under pull-request-only rulesets
