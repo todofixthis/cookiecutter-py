@@ -10,6 +10,14 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.6.0 - 2026-11-25
+
+A release skill that works under pull-request-only rulesets
+
+- The `release` skill bumps the version through a pull request into `develop`, stopping until it merges, then opens the release PR with `--head develop`; its last step, rebasing `develop` onto `main`, is gone. A ruleset requiring pull requests and allowing only merge commits rejected both the direct push and the rebase. If your `.agents/rules/project.md` overrides either step, delete that override; if the skill's hunks conflict, take the template's side
+- Projects with their own docs site: the `release` skill links a migration guide from `README.rst` by its ReadTheDocs URL rather than a relative path, which breaks on PyPI. Existing upgrade notices in `README.rst` keep their links, so check them
+- New projects' `.github/workflows/project.yml` says a conditional step skips only on an explicit `'false'`, so a missing or misspelt output runs it. The file is written once, so an existing project's copy is unchanged: check its own skip conditions
+
 ## 1.5.1 - 2026-11-25
 
 Leave out the Development Status classifier
