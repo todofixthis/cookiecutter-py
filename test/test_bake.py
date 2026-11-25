@@ -93,6 +93,16 @@ def test_generates_valid_pyproject_toml(each_bake: Path) -> None:
     assert data["project"]["name"] == "phx-my-python-project"
 
 
+def test_pyproject_has_no_development_status_classifier(each_bake: Path) -> None:
+    """The generated pyproject.toml has no Development Status classifier (ADR 023)."""
+    with (each_bake / "pyproject.toml").open("rb") as f_in:
+        data = tomllib.load(f_in)
+    statuses = [
+        c for c in data["project"]["classifiers"] if c.startswith("Development Status")
+    ]
+    assert statuses == []
+
+
 def test_docs_links_use_readthedocs_slug(baked_project: Path) -> None:
     """ReadTheDocs links use the PyPI name without its `phx-` prefix."""
     # copier.yml's `readthedocs_slug` comment says why the prefix goes.
