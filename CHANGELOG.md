@@ -10,6 +10,13 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.5.1 - 2026-11-25
+
+Leave out the Development Status classifier
+
+- `pyproject.toml` gains a comment above `classifiers` saying to leave out `Development Status`: the version's pre-release segment already states it, and a hand-kept classifier goes stale, as `5 - Production/Stable` does on an alpha (cookiecutter-py ADR 023). The template never adds that classifier, so delete any `Development Status` entry your project added itself; `copier update` won't remove it. If that hunk conflicts, keep your own entries and take the comment above `classifiers`
+- The `rotate-python-versions` skill no longer says the template derives Python version classifiers, since it renders none, and tells the agent to update any version classifiers the project added itself
+
 ## 1.5.0 - 2026-11-25
 
 Fail CI on committed conflict markers
