@@ -10,6 +10,12 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 1.7.0 - 2026-11-26
+
+Fail docs builds on unresolved cross-references
+
+- Projects with their own docs site: `docs/conf.py` sets `nitpicky = True`, so the strict docs build (`-W`) also fails on a Python cross-reference Sphinx can't resolve, which otherwise renders as plain text (cookiecutter-py ADR 024). Run `uv run sphinx-build -E -n docs /tmp/nitpicky` to list the warnings this update's CI will fail on. Document your own TypeVars and aliases in your API docs (the comment above `nitpicky` says how) rather than ignoring them; that can land before this update. In this update's PR, add an `intersphinx_mapping` entry for a dependency with Sphinx docs, and list in the new `nitpick_ignore` only a third-party target no mapped inventory resolves, as `(role, target)` copied from the warning; committing to Renovate's branch stops it rebasing the PR, so merge it promptly. Those `conf.py` lines are your project's own: keep them through later template updates
+
 ## 1.6.1 - 2026-11-25
 
 Release steps that work with a dynamic version
