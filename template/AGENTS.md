@@ -12,7 +12,7 @@ This project is generated from the copier template `todofixthis/cookiecutter-py`
 
 ## Architecture Decision Records
 
-When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `phx:writing-adrs` skill (from the phx plugin, which `.claude/settings.json` enables) for the format, conventions and tooling: its `adr.py` allocates the number, generates `docs/adr/INDEX.md` and validates the corpus. Where the skill isn't available (outside Claude Code, or the plugin isn't loaded), read the [skill](https://github.com/todofixthis/phx-claude-siat/blob/9.1.0/skills/writing-adrs/SKILL.md) and run the same tool as `phx-adr` (see Commands). Don't hand-edit the index, or add a repo-local ADR script, pre-commit hook or vendored copy of the tool (ADR 019 in todofixthis/cookiecutter-py). ADRs live in `docs/adr/`.
+When making significant decisions — choosing between libraries, patterns, tools, or conventions — you **must** write an ADR before implementing the decision. Use the `phx:writing-adrs` skill (from the phx plugin, which `.claude/settings.json` enables) for the format, conventions and tooling: its `adr.py` allocates the number, generates `docs/adr/INDEX.md` and validates the corpus. Where the skill isn't available (outside Claude Code, or the plugin isn't loaded), read the [skill](https://github.com/todofixthis/phx-claude-siat/blob/9.2.0/skills/writing-adrs/SKILL.md) and run the same tool as `phx-adr` (see Commands). Don't hand-edit the index, or add a repo-local ADR script, pre-commit hook or vendored copy of the tool (ADR 019 in todofixthis/cookiecutter-py). ADRs live in `docs/adr/`.
 
 If you find yourself about to establish a new cross-cutting pattern (something that will affect multiple domains or files, e.g. a testing convention, a shared utility, an error-handling approach), stop and write an ADR first even if the immediate task feels local. A pattern adopted once becomes the template for everything that follows.
 
@@ -53,15 +53,15 @@ The phx plugin's ADR tool, for use where the skill isn't available. Renovate bum
 
 ```bash
 # Scaffold the next ADR
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 9.1.0
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr new "Title" --summary "…" --scope path/ # 9.2.0
 # List the decisions binding a path, before changing it
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr for path/to/file # 9.1.0
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr for path/to/file # 9.2.0
 # Mark an ADR superseded
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr supersede OLD --by NEW # 9.1.0
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr supersede OLD --by NEW # 9.2.0
 # Regenerate docs/adr/INDEX.md
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr index # 9.1.0
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr index # 9.2.0
 # Validate, as CI does
-uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@c47fe62f483efa75e953d6a221306f552f362349#subdirectory=skills/writing-adrs' phx-adr check # 9.1.0
+uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr check # 9.2.0
 ```
 
 If CI reports a stale index the session's own tool can't reproduce, the installed plugin (which tracks phx-claude-siat's `main`) and the pinned release differ. Compare the two versions: if the installed one is newer, merge Renovate's pending bump, or bump by hand: each pin to the release's commit, and its comment and the skill link above to the release's version. The commit is the `refs/tags/<version>^{}` line of `git ls-remote --tags https://github.com/todofixthis/phx-claude-siat`, not the tag object above it. Otherwise update the plugin.
@@ -105,6 +105,12 @@ re-check that it still applies, and delete it if not.
 
 - NZ English; incorporate Te Reo Māori where natural (e.g. "mahi", "kaupapa")
 - Use "Initialises" not "Initializes"
+
+## GitHub settings
+
+`infra/github/` manages this repo's GitHub settings through the todofixthis Terraform module, `todofixthis/terraform-github-repository` (ADR 025 in todofixthis/cookiecutter-py), so never change them in the GitHub UI. `main.tf` is template-owned; this project's own values (description, homepage, topics) live in `terraform.tfvars`, and `.terraform.lock.hcl`, which `terraform init` writes, is the project's own too. A Renovate PR bumping the module or provider in `main.tf` is not a template candidate: Renovate bumps the same pin in the template too. Where a template update then conflicts on that line, keep the higher version, whichever side it's on, rather than taking the template's side; the resolved PR needs a plan like any other.
+
+State lives only on the maintainer's machine (`infra/github/terraform.tfstate`, gitignored), and CI runs no plan. So never run `terraform apply`, `terraform import` or the module's adoption steps: the maintainer applies after an infra PR merges, from an up-to-date `develop`. A PR changing `main.tf` or `terraform.tfvars`, and any Renovate PR updating the module or the provider, even one changing only `.terraform.lock.hcl`, needs a plan before it merges. Renovate's weekly lock-file maintenance PR, the one on the branch `renovate/lock-file-maintenance` (its title usually says "Lock file maintenance", but the branch decides), is the exception: it refreshes every lock file at once, automerges, and needs none. A PR bumping the provider's major version shouldn't appear, since `renovate.json` disables those (the module owns that constraint): if one does, close it rather than plan it. If this checkout has the state file, run `terraform -chdir=infra/github plan` and report what it changes; otherwise tell the maintainer the PR needs a local plan, run with `gh pr checkout <n> && terraform -chdir=infra/github plan`. A checkout without the state file is normal and doesn't mean the repo is unmanaged.
 
 ## Branches
 

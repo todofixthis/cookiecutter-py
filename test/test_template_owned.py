@@ -64,6 +64,7 @@ def test_rule_lists_every_template_owned_file(each_bake: Path) -> None:
         ".agents/rules/project.md",
         ".claude/rules/project.md",
         ".github/workflows/project.yml",
+        "infra/github/terraform.tfvars",
     }
 
     expected = baked_paths(each_bake) - seeds - first_copy_only

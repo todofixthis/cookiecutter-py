@@ -7,11 +7,12 @@ _envops:
   variable_start_string: "[["
 _preserve_symlinks: true
 # Written on first copy, then the project's own: `copier update` never touches
-# them, so local rules (ADR 010) and CI jobs (ADR 021) survive template
-# releases.
+# them, so local rules (ADR 010), CI jobs (ADR 021) and GitHub settings
+# (ADR 025) survive template releases.
 _skip_if_exists:
   - .agents/rules/project.md
   - .github/workflows/project.yml
+  - infra/github/terraform.tfvars
 _subdirectory: template
 _templates_suffix: .jinja
 
