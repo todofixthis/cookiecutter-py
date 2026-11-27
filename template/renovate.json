@@ -17,6 +17,16 @@
         "phx-claude-siat@(?<currentDigest>[0-9a-f]{40})#subdirectory=skills/writing-adrs'[^\\n]*# (?<currentValue>\\d+\\.\\d+\\.\\d+)",
         "phx-claude-siat/blob/(?<currentValue>\\d+\\.\\d+\\.\\d+)/"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Track the workflows' annotated env pins, such as the Renovate validator's (ADR 025 in todofixthis/cookiecutter-py).",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+[A-Z0-9_]+: (?<currentValue>\\S+)"
+      ]
     }
   ],
   "extends": [
@@ -34,6 +44,19 @@
       "description": "Never bump Python: an agent session rotates it with the rotate-python-versions skill, which also removes compat code (ADR 015 in todofixthis/cookiecutter-py).",
       "enabled": false,
       "matchDepNames": ["python"]
+    },
+    {
+      "automerge": true,
+      "description": "Bump the Renovate validator pin monthly, merging once gate passes: Renovate releases several times a day (ADR 025 in todofixthis/cookiecutter-py).",
+      "matchDatasources": [
+        "npm"
+      ],
+      "matchDepNames": [
+        "renovate"
+      ],
+      "schedule": [
+        "* 0-3 1 * *"
+      ]
     }
   ]
 }

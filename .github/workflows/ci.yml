@@ -151,12 +151,44 @@ jobs:
       - name: Check ADRs
         run: uvx --from 'git+https://github.com/todofixthis/phx-claude-siat@86f320fb6af2894dafd30cbd1e0dc1cbdb5c4575#subdirectory=skills/writing-adrs' phx-adr check # 9.2.0
 
+  # Renovate's own validator checks this repo's config and a baked project's
+  # (ADR 025), each from the directory holding it, so it checks the file a
+  # project receives rather than the template's source.
+  renovate:
+    runs-on: ubuntu-latest
+    env:
+      # renovate: datasource=npm depName=renovate
+      RENOVATE_VERSION: 44.257.5
+
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - name: Install the template's dependencies
+        run: uv sync --group ci
+      - name: Bake a project with default answers
+        run: uv run copier copy --defaults --vcs-ref=HEAD --data copyright_year=2026 --data project_short_description=x . /tmp/baked/my-python-project
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.3
+      - name: Validate this repo's Renovate config
+        run: npx --yes --package "renovate@${RENOVATE_VERSION}" -- renovate-config-validator --strict
+      - name: Validate the generated project's Renovate config
+        run: npx --yes --package "renovate@${RENOVATE_VERSION}" -- renovate-config-validator --strict
+        working-directory: /tmp/baked/my-python-project
+
   # The required status check on `develop` and `main`. Depending on every job
   # here collapses their results into one, so no ruleset lists them. `main`
   # also requires the Release workflow's `release-check` (ADR 018). A
   # skipped job fails it, so a job silently skipped cannot pass unnoticed.
   gate:
-    needs: [adrs, generate, test, type-check]
+    needs: [adrs, generate, renovate, test, type-check]
     if: always()
     runs-on: ubuntu-latest
 
