@@ -41,7 +41,9 @@ Based on the changes, recommend a semver bump:
 Where the latest release and the next version share a pre-release cycle, bump only the pre-release segment (`4.0.0a2` → `4.0.0a3`) unless the developer says otherwise.
 
 ### 5. Gate: breaking changes require a migration guide
-A **breaking change** is anything that makes previously-working code fail — at runtime, or under a type checker. Undocumented behaviour someone relied on still counts; "only a couple of users" measures blast radius, not compatibility. If this release has none, skip to the stop below.
+A **breaking change** is anything that makes previously-working code fail — at runtime, or under a type checker. Undocumented behaviour someone relied on still counts; "only a couple of users" measures blast radius, not compatibility.
+
+A major version bump of a runtime dependency is also breaking: the release moves `[project] dependencies` onto a major the last release didn't require (check `git diff <last-tag>..HEAD -- pyproject.toml`). Dev groups never reach users, so they don't count. The bump counts whether or not our own code changed, because it can conflict with whatever else a user's environment installs. We don't audit which packages those are, or look for a known conflict to justify the label; the bump is the signal. If this release has no breaking change, skip to the stop below.
 
 **First, settle the version.** Step 4 defines minor and patch as *fully backwards-compatible*, so a breaking change in anything but a major contradicts it. When that happens, stop and put it to the developer: bump to major, or keep the smaller bump and record why in an ADR. Neither pick it for them nor draft around it — the answer decides which guide the rest of this step is about, and a release drafted for one version and linked to another ships broken.
 
@@ -278,7 +280,7 @@ A filled-in breaking changes alert:
 - Technical details of how something works internally
 - Configuration consolidation (unless it changes developer-facing behaviour)
 - Code organisation changes
-- Dependency updates (include only if resolving a critical or high-severity vulnerability)
+- Dependency updates (include only if resolving a critical or high-severity vulnerability, or a major bump to a runtime dependency, which is a breaking change)
 - Improvements to coding agent instructions
 
 **Always omit**
@@ -311,6 +313,8 @@ Then add what the fix leads them into next:
 
 - **Second-order traps.** A fix that lands people in a subtler failure needs that failure documented beside it, with its error text.
 - **Facts stranded in ADRs.** [% if docs_site %]ADRs are not in the toctree and readers never see them.[% else %]Readers of the guide never see ADRs.[% endif %] If an ADR holds the only explanation of something a migrating developer needs, the guide is where it goes.
+
+For a runtime dependency's major bump, name the dependency and the old and new majors, and show the resolver's error for a conflicting pin. Don't list which packages might conflict.
 
 Verify every code sample and every error message by running it.
 
