@@ -111,11 +111,16 @@ project's first plan, and the project commits it.
 ## Consequences
 
 - An existing project adopts on the template-update PR that first brings
-  `infra/github/`: set `terraform.tfvars` to the repo's live description,
-  topics and homepage (the seeded docs URL may not exist yet), add the
-  `import` blocks the module's README gives, plan, and
-  remove the blocks in a follow-up once applied. filters-iso's own
-  `main.tf` gives way to the template's, as its ADR 005 expects.
+  `infra/github/`, which shouldn't merge without it, or the project carries
+  infra with no state behind it. On that PR, set `terraform.tfvars` to the
+  repo's live description, topics and homepage (the seeded docs URL may not
+  exist yet), and put the `import` blocks the module's README gives in a
+  file of the project's own, such as `infra/github/imports.tf`, since
+  `main.tf` is template-owned. Plan before merging, apply from `develop`
+  after, and remove `imports.tf` in a follow-up. filters-iso's update
+  conflicts on its hand-written `main.tf`, which gives way to the
+  template's as its ADR 005 expects; its description moves into the seeded
+  `terraform.tfvars`, which needs its live value.
 - Renovate bumps the module tag both here and in each project, like the
   template's other pins; a bump arriving both ways can conflict, as the
   backlog's pin-conflict item records. Neither automerges, and each needs a
