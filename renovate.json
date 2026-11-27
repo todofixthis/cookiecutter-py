@@ -38,6 +38,12 @@
       "description": "Never bump Python: CI's versions follow copier.yml's python_policy, which the rotate-python-versions skill moves (ADR 015).",
       "enabled": false,
       "matchDepNames": ["python"]
+    },
+    {
+      "description": "Never bump the GitHub provider's major in the template: the todofixthis Terraform module owns that constraint, so a new major arrives with a module release, raised alongside the module pin (ADR 025; ADR 001 in todofixthis/terraform-github-repository).",
+      "enabled": false,
+      "matchPackageNames": ["integrations/github"],
+      "matchUpdateTypes": ["major"]
     }
   ],
   "pep621": {

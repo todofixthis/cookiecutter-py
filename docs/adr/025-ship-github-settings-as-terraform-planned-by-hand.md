@@ -128,7 +128,9 @@ project's first plan, and the project commits it.
   the lock. Renovate's weekly lock-file maintenance needs none, as Option 2
   sets out, and the generated AGENTS.md says so. The template's
   `renovate.json` disables provider majors, which the module's ADR 001
-  requires of every dependent, since the module owns that constraint.
+  requires of every dependent, since the module owns that constraint, and
+  this repository's own `renovate.json` does the same for the template's
+  copy, so the constraint moves only alongside a module pin that needs it.
 - This repository's CI bakes a project and validates its `infra/github/`
   with Terraform, fetching the module the template pins.
 - A private project can't adopt: a personal account on GitHub Free can't
