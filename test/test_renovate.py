@@ -1,4 +1,4 @@
-"""Checks each Renovate config tracks the validator pin its CI runs (ADR 025)."""
+"""Checks each Renovate config tracks the validator pin its CI runs (ADR 026)."""
 
 import json
 import re
@@ -31,7 +31,7 @@ def tracked_versions(config: Path, workflow: Path, relative: str) -> set[str]:
             continue
         for match_string in manager["matchStrings"]:
             # JavaScript names a group (?<name>…), Python (?P<name>…).
-            regex = re.compile(match_string.replace("(?<", "(?P<"))
+            regex = re.compile(re.sub(r"\(\?<(?=\w)", "(?P<", match_string))
             for match in regex.finditer(text):
                 groups = match.groupdict()
                 if groups.get("depName") == "renovate":

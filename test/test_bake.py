@@ -305,6 +305,65 @@ def test_project_rules_survive_update(
     assert "_commit: 0.0.2" in answers
 
 
+def test_infra_values_survive_update(committed_bake: Path, template_repo: Path) -> None:
+    """copier update leaves the project's own GitHub settings as it wrote them."""
+    tfvars = committed_bake / "infra" / "github" / "terraform.tfvars"
+    tfvars.write_text('description = "Ours"\n', encoding="utf-8")
+    subprocess.run(
+        ["git", "commit", "--quiet", "--all", "-m", "Edit"],
+        check=True,
+        cwd=committed_bake,
+    )
+
+    release_template_change(
+        template_repo,
+        "template/infra/github/terraform.tfvars.jinja",
+        lambda text: text + "# A line the template adds later.\n",
+    )
+
+    answers = update_project(committed_bake)
+
+    assert tfvars.read_text(encoding="utf-8") == 'description = "Ours"\n'
+    assert "_commit: 0.0.2" in answers
+
+
+def test_infra_names_the_repo_and_pins_the_module(baked_project: Path) -> None:
+    """The root module manages this project's repo through a released module tag."""
+    main_tf = (baked_project / "infra" / "github" / "main.tf").read_text(
+        encoding="utf-8"
+    )
+    assert 'name         = "my-python-project"' in main_tf
+    assert 'owner = "todofixthis"' in main_tf
+    assert re.search(
+        r'source = "github\.com/todofixthis/terraform-github-repository'
+        r'\?ref=v\d+\.\d+\.\d+"',
+        main_tf,
+    )
+
+
+def test_infra_seeds_values_from_answers(each_bake: Path) -> None:
+    """The seeded settings take the description and the docs site's URL."""
+    tfvars = (each_bake / "infra" / "github" / "terraform.tfvars").read_text(
+        encoding="utf-8"
+    )
+    slug = (
+        "my-python-project"
+        if (each_bake / ".readthedocs.yaml").exists()
+        else "parent-project"
+    )
+    assert 'description  = "x"' in tfvars
+    assert f'homepage_url = "https://{slug}.readthedocs.io/"' in tfvars
+
+
+def test_infra_escapes_the_description(tmp_path: Path) -> None:
+    """A description holding HCL's string syntax renders as that literal text."""
+    project = bake(tmp_path / "out", project_short_description='Say "${a}" %{b} \\ é')
+    tfvars = (project / "infra" / "github" / "terraform.tfvars").read_text(
+        encoding="utf-8"
+    )
+    assert 'description  = "Say \\"$${a}\\" %%{b} \\\\ é"' in tfvars
+
+
 def test_ci_leaves_out_dev_group(each_bake: Path) -> None:
     """Every uv command in CI leaves out `dev`, whose tooling can lack wheels."""
     workflow = yaml.safe_load(
