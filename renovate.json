@@ -45,5 +45,11 @@
       "/(^|/)pyproject\\.toml$/",
       "/^template/pyproject\\.toml\\.jinja$/"
     ]
+  },
+  "terraform": {
+    "managerFilePatterns": [
+      "/\\.tf$/",
+      "/^template/infra/github/main\\.tf\\.jinja$/"
+    ]
   }
 }

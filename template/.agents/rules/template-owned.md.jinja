@@ -22,7 +22,8 @@ paths:
   - "LICENCE.txt"
 [% if docs_site %]  - "docs/Makefile"
 [% endif %][% if docs_site %]  - "docs/conf.py"
-[% endif %]  - "pyproject.toml"
+[% endif %]  - "infra/github/main.tf"
+  - "pyproject.toml"
   - "renovate.json"
   - "src/[[ package_name ]]/py.typed"
 ---
