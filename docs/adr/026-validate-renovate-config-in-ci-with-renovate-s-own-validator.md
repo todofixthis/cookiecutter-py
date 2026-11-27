@@ -44,9 +44,9 @@ the template's `build.yml` against the project's own.
 
 **Pros:** It runs the same checks Renovate itself does: it compiles every regex, and
 `--strict` also fails a config that only needs migration.
-**Cons:** Every push of every project installs Node and the `renovate` package, about 360 MB
-on every run, since nothing caches it, since ADR 018 rules out path-filtering a job `gate` needs. The pin fixes
-only the top-level package: npm resolves its 400-odd dependencies afresh within their ranges,
+**Cons:** Every push of every project installs Node and downloads the `renovate` package,
+about 360 MB, since no step caches it and the job has no path filter. The pin fixes only the
+top-level package: npm resolves its 400-odd dependencies afresh within their ranges,
 with no lock and no release-age cooldown, and runs their install scripts.
 **Risks:** The pin trails the hosted Renovate app, so a config valid for the app could fail
 an older validator, or the reverse. Without `re2`'s install script, Renovate falls back to
