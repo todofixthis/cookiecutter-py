@@ -52,6 +52,12 @@
       "matchDepNames": ["python"]
     },
     {
+      "description": "Never bump the GitHub provider's major in the template: the todofixthis Terraform module owns that constraint, so a new major arrives with a module release, raised alongside the module pin (ADR 025; ADR 001 in todofixthis/terraform-github-repository).",
+      "enabled": false,
+      "matchPackageNames": ["integrations/github"],
+      "matchUpdateTypes": ["major"]
+    },
+    {
       "automerge": true,
       "description": "Bump the Renovate validator pin's minor and patch releases monthly, merging once gate passes, since Renovate releases several times a day; a major waits for review (ADR 026).",
       "matchDatasources": [

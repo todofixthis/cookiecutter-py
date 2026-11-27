@@ -10,6 +10,25 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 2.0.0 - 2026-11-27
+
+Manage the repo's GitHub settings with Terraform
+
+- `infra/github/` manages the repo's GitHub settings through the todofixthis Terraform module, pinned to v1.1.0: merge methods, features, security settings, and the rulesets requiring `gate` (cookiecutter-py ADR 025). `main.tf` is template-owned. The project's own description, homepage and topics live in `terraform.tfvars`, which copier writes on first copy only, so template updates keep them. State stays on the maintainer's machine, gitignored, and CI runs no plan: plan by hand before merging a PR that changes `main.tf` or `terraform.tfvars`, or a Renovate PR updating the module or provider, and apply from `develop` after it merges. Renovate's weekly lock-file maintenance PR needs no plan. AGENTS.md's new "GitHub settings" section tells agents the same, and never to apply.
+- Renovate no longer offers the GitHub provider's major versions, since the module owns that constraint.
+- The phx-adr pin moves to 9.2.0.
+
+Don't merge this update's PR until the repo is adopted on it, or the project carries `infra/github/` with no state behind it. A private repo can't adopt, since GitHub Free refuses rulesets on one, and `main.tf` sets no visibility, so its plan would make it public. On the PR, following the module README's "Adopting an existing repo":
+
+1. Sync `develop` and `main` locally, and list the repo's rulesets: `gh api repos/<owner>/<repo>/rulesets -q '.[] | "\(.id) \(.name) \(.target)"'`.
+2. Set `infra/github/terraform.tfvars` to the repo's live description, topics and homepage, writing any `\` in the description as `\\`, `"` as `\"`, `${` as `$${` and `%{` as `%%{`. The seeded docs URL may not exist yet; `homepage_url = null` keeps none.
+3. Put the README's `import` blocks in a file of the project's own, `infra/github/imports.tf`, since `main.tf` is template-owned. Rulesets import as `<repo>:<id>`: the one on `develop` to `module.repository.github_repository_ruleset.trunk["develop"]`, the one on `main` to `trunk["main"]`, and a tag ruleset, if any, to `tags_release`.
+4. Plan from the PR branch (`terraform -chdir=infra/github init -input=false` then `plan`). It should show six imports (the repo, its alert and Dependabot settings, its default branch and both trunk rulesets; seven with a tag ruleset), creates only for `terraform_data.push` and any ruleset you didn't import (usually `tags_release`), and in-place updates for the rest. Read the repo's own diff as closely as the rulesets', since an unintended description change shows as an ordinary update, and stop if anything is replaced or destroyed. Commit the `.terraform.lock.hcl` that `init` wrote, then merge.
+5. Apply from an up-to-date `develop`, and delete any hand-made ruleset you didn't import.
+6. Remove `imports.tf` in a follow-up PR, whose plan should show no changes.
+
+A project already managing its settings with the module by hand, like filters-iso, has no imports to add: its `main.tf` conflicts, so take the template's, move its values into `terraform.tfvars`, and its plan should show no changes.
+
 ## 1.7.0 - 2026-11-26
 
 Fail docs builds on unresolved cross-references
