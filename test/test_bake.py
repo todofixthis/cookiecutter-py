@@ -406,6 +406,7 @@ def test_ci_job_names(baked_project: Path) -> None:
         "docs",
         "adrs",
         "project",
+        "renovate",
         "gate",
     }
 
@@ -597,6 +598,7 @@ def test_without_docs_site_ci_has_no_docs_job(baked_without_docs_site: Path) -> 
         "lint",
         "adrs",
         "project",
+        "renovate",
         "gate",
     }
 
