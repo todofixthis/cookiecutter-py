@@ -35,7 +35,7 @@ uv run pytest
 uv run mypy test scripts .autohooks
 # Lint
 uv run ruff check test scripts .autohooks
-# Validate this repo's and the template's Renovate configs at the version CI pins (needs Node 24.11 or later; npm's `deprecated` warnings on a first run come from Renovate's own dependencies)
+# Validate this repo's and the template's Renovate configs at the version CI pins (needs a Node version Renovate's `engines` field accepts; npm's `deprecated` warnings on a first run come from Renovate's own dependencies)
 v=$(awk '/RENOVATE_VERSION:/ {print $2}' .github/workflows/ci.yml) && test -n "$v" && timeout 600 npx --yes --package "renovate@$v" -- renovate-config-validator --strict && timeout 600 npx --yes --package "renovate@$v" -- renovate-config-validator --strict --no-global template/renovate.json
 # Regenerate the template-owned rule (the pre-commit hook does this for you)
 uv run python scripts/template_owned.py
