@@ -124,8 +124,21 @@ State lives only on the maintainer's machine (`infra/github/terraform.tfstate`, 
 
 Use the `using-git-worktrees` skill; it creates worktrees via the native `EnterWorktree` tool under `.claude/worktrees/` (gitignored). Don't hand-roll `git worktree add` when the native tool is available. Keep `.claude/` a real directory (only `.claude/skills` and `.claude/rules` are symlinks, into `.agents/`) — the native tool refuses to run if `.claude` itself is a symlink.
 
-After creating a worktree, install its pre-commit hook (see the autohooks activate command in Commands). A fresh worktree has no per-worktree hooks directory, so create it first:
+In every worktree, git runs the pre-commit hook from the main checkout's `.git/hooks`. If none is installed there, a commit in a worktree runs no checks at all. After creating a worktree, install the hook in the main checkout, as one Bash call:
 
 ```bash
-mkdir -p "$(git rev-parse --git-dir)/hooks"
+cd <worktree> &&
+main="$(git worktree list --porcelain | sed -n '1s/^worktree //p')" &&
+(cd "$main" && uv run autohooks activate --mode=pythonpath)
+```
+
+`autohooks activate` runs in the main checkout, the one exception to the `cd <worktree> &&` rule in Commands: activated in the worktree, it installs a hook git never runs. `uv run` there syncs the main checkout's venv if it has none. If autohooks reports the hook as outdated, run `autohooks activate --force` in the main checkout too, never in a worktree.
+
+autohooks also looks for its hook in the worktree's own git dir, `.git/worktrees/<name>/hooks`, and crashes if the hook isn't there. So copy the hook there, as one Bash call. Git never runs the copy; it only satisfies autohooks' check, so re-copy it whenever the main checkout's hook changes.
+
+```bash
+cd <worktree> &&
+{ test "$(git rev-parse --path-format=absolute --git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" || { echo "not a linked worktree: cd into the worktree first" >&2; false; }; } &&
+mkdir -p "$(git rev-parse --git-dir)/hooks" &&
+cp "$(git rev-parse --git-common-dir)/hooks/pre-commit" "$(git rev-parse --git-dir)/hooks/pre-commit"
 ```
