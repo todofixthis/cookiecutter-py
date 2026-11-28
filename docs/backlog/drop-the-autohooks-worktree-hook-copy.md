@@ -6,7 +6,7 @@
 
 `AGENTS.md` and `template/AGENTS.md`, under "Git Worktrees", have a second Bash block that copies the main checkout's pre-commit hook into the worktree's own git dir, `.git/worktrees/<name>/hooks`. That block, and the paragraph introducing it, work around a bug in every autohooks release up to at least 26.9.0: `get_git_hook_directory_path()` in `autohooks/utils.py` builds the hooks dir from `git rev-parse --git-dir`, which in a linked worktree is the worktree's own git dir, not the common git dir that git runs hooks from. `autohooks activate` and the pre-commit run then crash with `FileNotFoundError`.
 
-A fix building the path from `git rev-parse --git-common-dir` is on the `claude/sleepy-euler-ti8s7u` branch of todofixthis/autohooks, a fork of greenbone/autohooks. Upstream may fix it differently, so judge a release by its behaviour: it has the fix if `autohooks activate` run in a linked worktree, after the main checkout is activated, reports the hook as already installed instead of crashing.
+A fix building the path from `git rev-parse --git-common-dir` is on the `claude/sleepy-euler-ti8s7u` branch of todofixthis/autohooks, a fork of greenbone/autohooks. Upstream may fix it differently, so judge a release by its behaviour: it has the fix if `autohooks activate`, run in a fresh linked worktree where the second block never ran, after the main checkout is activated, reports the hook as already installed at the main checkout's `.git/hooks/pre-commit`. Unfixed releases crash there, and in a worktree that already holds the copy they report `.git/worktrees/<name>/hooks/pre-commit` instead.
 
 Once a release has the fix:
 
