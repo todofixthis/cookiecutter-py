@@ -10,6 +10,15 @@ release workflow tags the merge commit from the top entry, with `X.Y.Z: <theme>`
 changes as the tag's annotation, and publishes a GitHub Release (ADR 017). The tag keeps
 the text as merged; a later edit here changes only what later Renovate PRs quote.
 
+## 2.1.0 - 2026-11-28
+
+Renovate config validation in CI, and module v1.2.0
+
+- `infra/github/` pins the todofixthis Terraform module at v1.2.0 ([release notes](https://github.com/todofixthis/terraform-github-repository/releases/tag/v1.2.0)). Its tag ruleset's address moves to `module.repository.github_repository_ruleset.tags_release[0]`, and existing state moves by itself, so a repo already applied plans `tags_release has moved to …tags_release[0]` and no change. If its `infra/github/imports.tf` is still there, remove it first (2.0.0's step 6): an import naming the bare `tags_release` fails the plan with "The target resource is using count". Plan this update's PR by hand and apply from `develop` after it merges, as for any module update. A repo adopting on this update follows 2.0.0's steps, but imports a tag ruleset, if it has one, to `tags_release[0]`. The module also stops creating rulesets for a private repo, which GitHub Free refuses; `main.tf` still sets no visibility, so a private repo still can't adopt.
+- `build.yml` gains a `renovate` job, which `gate` needs. It runs Renovate's own validator with `--strict` on `renovate.json`, at a version pinned in the workflow (cookiecutter-py ADR 026). If this update's `gate` fails on it, fix what the job's log names in `renovate.json` on the PR. `renovate.json` gains the manager and rule for that pin: Renovate bumps the validator pin's minor and patch releases monthly, merging once `gate` passes, and a major waits for review. npm packages also wait three days after release before Renovate offers them. AGENTS.md gains the command to run the validator locally.
+- The `release` skill reads the signing key's fingerprint with `grep` and `cut` rather than `awk`. Claude Code replaced `awk`'s `$1` and `$2` field references when the skill was invoked with arguments, which left the fingerprint empty or broke the command. When the signing key looks unpublished, it also says to check for a `curl` error before reporting that.
+- The `release` skill counts moving `[project] dependencies` to a new major of a runtime dependency as a breaking change, so the skill asks for a major bump, or an ADR recording why a smaller one stands, and a migration guide naming the dependency and its old and new majors.
+
 ## 2.0.0 - 2026-11-27
 
 Manage the repo's GitHub settings with Terraform
