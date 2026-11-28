@@ -135,18 +135,20 @@ pkg=dist/[[ pypi_project_name.replace('-', '_') ]]
 for f in "$pkg"-*.whl "$pkg"-*.tar.gz; do gpg --yes --local-user "$GPG_KEY" --detach-sign "$f"; done
 
 # The primary-key fingerprint of the key that signed, read from a signature,
-# since several keys can share one email address
+# since several keys can share one email address. Fields are cut rather than
+# read with awk: Claude Code replaces a dollar sign and digit in a skill invoked
+# with arguments, which would rewrite awk's field references
 sig=$(ls "$pkg"-*.whl.sig | head -n 1)
-GPG_FINGERPRINT=$(gpg --status-fd 1 --verify "$sig" "${sig%.sig}" 2>/dev/null | awk '$2 == "VALIDSIG" {print $12}')
+GPG_FINGERPRINT=$(gpg --status-fd 1 --verify "$sig" "${sig%.sig}" 2>/dev/null | grep '^\[GNUPG:\] VALIDSIG ' | cut -d' ' -f12)
 
 # Users import the key from GitHub, so it must be published there
 if curl -fsSL https://github.com/[[ github_username ]].gpg \
   | gpg --show-keys --with-colons \
-  | awk -F: '$1 == "fpr" {print $10}' \
+  | grep '^fpr:' | cut -d: -f10 \
   | grep -qx "$GPG_FINGERPRINT"; then
   # Removes any copy signed by an earlier run, so a failed signing leaves none
   rm -f release-<version>.md.asc
-  # Writes release-<version>.md.asc
+  # Fills in the fingerprint, then writes release-<version>.md.asc
   sed -i.bak "s/<fingerprint>/$GPG_FINGERPRINT/" release-<version>.md \
     && rm release-<version>.md.bak \
     && gpg --yes --local-user "$GPG_KEY" --clearsign release-<version>.md \
@@ -156,7 +158,7 @@ else
   echo "❌ Signing key '$GPG_FINGERPRINT' isn't published at https://github.com/[[ github_username ]].gpg"
 fi
 ```
-On ❌, stop and pass the message on to the developer. If the signing key isn't published, users couldn't verify the release, since they import the key from that URL; that message names the fingerprint, which is empty if signing failed or GitHub couldn't be reached. Once it's fixed, re-run this step alone: step a has already added the checksums.
+On ❌, stop and pass the message on to the developer. If the signing key isn't published, users couldn't verify the release, since they import the key from that URL; that message names the fingerprint, which is empty if signing failed. The same message follows a curl error when GitHub couldn't be reached, so check for one before telling the developer the key isn't published. Once it's fixed, re-run this step alone: step a has already added the checksums.
 
 **c. Build the release body** — concatenate the notes and the signed copy:
 ```
