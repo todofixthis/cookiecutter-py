@@ -127,12 +127,28 @@ the version dynamic and does not carry it.
 shasum -a 256 dist/[[ pypi_project_name.replace('-', '_') ]]-* >> release-<version>.md
 ```
 
-**b. GPG-sign the build artefacts and the notes, publishing the signing key's fingerprint.** Run this as one command, since each part needs the variables the one before it sets:
+**b. GPG-sign the build artefacts and the notes, publishing the signing key's fingerprint.** Run this as one command, since each part needs the variables the one before it sets. It runs in a subshell, so each failure exits non-zero after one ❌ line saying where:
 ```bash
-GPG_KEY=$(git config user.email)
+(
 pkg=dist/[[ pypi_project_name.replace('-', '_') ]]
+gpg_url=https://github.com/[[ github_username ]].gpg
+# Removes any copy signed by an earlier run, so a failed run leaves none
+rm -f release-<version>.md.asc
+
+# RELEASE_GPG_KEY where set; else the key git signs with, where git signs with
+# GPG; else gpg's pick of the keys under the commit email. Under gpg.format ssh
+# or x509, user.signingkey names a key of another kind
+GPG_KEY=$(git config user.email)
+case "$(git config gpg.format)" in
+  '' | openpgp) GPG_KEY=$(git config user.signingkey || echo "$GPG_KEY") ;;
+esac
+GPG_KEY=${RELEASE_GPG_KEY:-$GPG_KEY}
+
 # --yes overwrites signatures left by an earlier, interrupted run
-for f in "$pkg"-*.whl "$pkg"-*.tar.gz; do gpg --yes --local-user "$GPG_KEY" --detach-sign "$f"; done
+for f in "$pkg"-*.whl "$pkg"-*.tar.gz; do
+  gpg --yes --local-user "$GPG_KEY" --detach-sign "$f" \
+    || { echo "❌ Couldn't sign $f with key '$GPG_KEY'"; exit 1; }
+done
 
 # The primary-key fingerprint of the key that signed, read from a signature,
 # since several keys can share one email address. Fields are cut rather than
@@ -140,25 +156,27 @@ for f in "$pkg"-*.whl "$pkg"-*.tar.gz; do gpg --yes --local-user "$GPG_KEY" --de
 # with arguments, which would rewrite awk's field references
 sig=$(ls "$pkg"-*.whl.sig | head -n 1)
 GPG_FINGERPRINT=$(gpg --status-fd 1 --verify "$sig" "${sig%.sig}" 2>/dev/null | grep '^\[GNUPG:\] VALIDSIG ' | cut -d' ' -f12)
+[ -n "$GPG_FINGERPRINT" ] || { echo "❌ Couldn't verify $sig"; exit 1; }
 
 # Users import the key from GitHub, so it must be published there
-if curl -fsSL https://github.com/[[ github_username ]].gpg \
+published=$(curl -fsSL "$gpg_url") \
+  || { echo "❌ Couldn't fetch $gpg_url"; exit 1; }
+printf '%s\n' "$published" \
   | gpg --show-keys --with-colons \
   | grep '^fpr:' | cut -d: -f10 \
-  | grep -qx "$GPG_FINGERPRINT"; then
-  # Removes any copy signed by an earlier run, so a failed signing leaves none
-  rm -f release-<version>.md.asc
-  # Fills in the fingerprint, then writes release-<version>.md.asc
-  sed -i.bak "s/<fingerprint>/$GPG_FINGERPRINT/" release-<version>.md \
-    && rm release-<version>.md.bak \
-    && gpg --yes --local-user "$GPG_KEY" --clearsign release-<version>.md \
-    && echo "✅ Signed with $GPG_FINGERPRINT, published on GitHub" \
-    || echo "❌ Couldn't fill in or sign release-<version>.md"
-else
-  echo "❌ Signing key '$GPG_FINGERPRINT' isn't published at https://github.com/[[ github_username ]].gpg"
-fi
+  | grep -qx "$GPG_FINGERPRINT" \
+  || { echo "❌ Signing key '$GPG_FINGERPRINT' isn't published at $gpg_url"; exit 1; }
+
+# Fills in the fingerprint, then writes release-<version>.md.asc with the key
+# just checked
+sed -i.bak "s/<fingerprint>/$GPG_FINGERPRINT/" release-<version>.md \
+  && rm release-<version>.md.bak \
+  && gpg --yes --local-user "$GPG_FINGERPRINT" --clearsign release-<version>.md \
+  || { echo "❌ Couldn't fill in or sign release-<version>.md"; exit 1; }
+echo "✅ Signed with $GPG_FINGERPRINT, published on GitHub"
+)
 ```
-On ❌, stop and pass the message on to the developer. If the signing key isn't published, users couldn't verify the release, since they import the key from that URL; that message names the fingerprint, which is empty if signing failed. The same message follows a curl error when GitHub couldn't be reached, so check for one before telling the developer the key isn't published. Once it's fixed, re-run this step alone: step a has already added the checksums.
+On a non-zero exit, stop and pass the ❌ line on to the developer. Users import the key from that GitHub URL, so a release signed with an unpublished key can't be verified. Where gpg picked an unpublished key from several under one email, ask the developer for the published key's fingerprint, and re-run with `RELEASE_GPG_KEY=<fingerprint>` on its own line before the `(`. Once it's fixed, re-run this step alone: step a has already added the checksums.
 
 **c. Build the release body** — concatenate the notes and the signed copy:
 ```
