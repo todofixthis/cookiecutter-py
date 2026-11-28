@@ -212,6 +212,30 @@ def test_rotate_skill_searches_hidden_dirs(baked_project: Path) -> None:
     assert all("--hidden" in line for line in rg_lines), rg_lines
 
 
+def test_skills_avoid_positional_argument_syntax(baked_project: Path) -> None:
+    """No skill holds a dollar sign followed by a digit, which Claude Code rewrites.
+
+    Claude Code replaces ``$0``, ``$1`` … in a skill invoked with arguments
+    with those arguments, so an awk field such as ``$2`` reaches the agent as
+    one of its words. Covers the baked skills and this repository's own.
+    """
+    roots = [
+        baked_project / ".agents" / "skills",
+        TEMPLATE_ROOT / ".agents" / "skills",
+    ]
+    skills = [path for root in roots for path in root.rglob("*.md")]
+    assert skills
+    hits = [
+        f"{path}:{number}: {line.strip()}"
+        for path in skills
+        for number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(), start=1
+        )
+        if re.search(r"\$\d", line)
+    ]
+    assert not hits, hits
+
+
 def test_claude_rules_stays_a_symlink(baked_project: Path) -> None:
     """.claude/rules survives baking as a real symlink into .agents/rules."""
     claude_rules = baked_project / ".claude" / "rules"
@@ -541,7 +565,7 @@ def test_release_skill_derives_key_fingerprint(baked_project: Path) -> None:
     """The release skill reads the fingerprint from a signature before signing notes."""
     skill = read_release_skill(baked_project)
     assert "Key fingerprint: `<fingerprint>`" in skill
-    derive = skill.index('$2 == "VALIDSIG" {print $12}')
+    derive = skill.index("grep '^\\[GNUPG:\\] VALIDSIG ' | cut -d' ' -f12")
     check = skill.index("if curl -fsSL https://github.com/todofixthis.gpg \\")
     clearsign = skill.index("--clearsign release-<version>.md")
     assert derive < check < clearsign
