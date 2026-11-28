@@ -5,7 +5,8 @@
 ## What
 
 A generated project's Renovate and this repository's both bump the same lines in
-template-owned files: dependency bounds in `template/pyproject.toml.jinja`, action SHAs in
+template-owned files: dependency bounds in `template/pyproject.toml.jinja`, action SHAs and the Renovate
+validator's `RENOVATE_VERSION` and `node-version` pins (ADR 026) in
 `template/.github/workflows/build.yml.jinja`, and the phx-adr pins there and in
 `template/AGENTS.md`. When the two land on different versions, the template-update PR
 that `copier update` opens (ADR 015) conflicts on those lines. When they land on the same
