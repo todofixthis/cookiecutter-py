@@ -134,7 +134,7 @@ main="$(git worktree list --porcelain | sed -n '1s/^worktree //p')" &&
 
 `autohooks activate` runs in the main checkout, the one exception to the `cd <worktree> &&` rule in Commands: activated in the worktree, it installs a hook git never runs. `uv run` there syncs the main checkout's venv if it has none. If autohooks reports the hook as outdated, run `autohooks activate --force` in the main checkout too, never in a worktree.
 
-autohooks 26 also looks for its hook in the worktree's own git dir, `.git/worktrees/<name>/hooks`, and crashes if the hook isn't there. So copy the hook there, as one Bash call. Git never runs the copy; it only satisfies autohooks' check, so re-copy it whenever the main checkout's hook changes.
+autohooks also looks for its hook in the worktree's own git dir, `.git/worktrees/<name>/hooks`, and crashes if the hook isn't there. So copy the hook there, as one Bash call. Git never runs the copy; it only satisfies autohooks' check, so re-copy it whenever the main checkout's hook changes.
 
 ```bash
 cd <worktree> &&
