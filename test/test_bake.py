@@ -566,7 +566,8 @@ def test_release_skill_derives_key_fingerprint(baked_project: Path) -> None:
     skill = read_release_skill(baked_project)
     assert "Key fingerprint: `<fingerprint>`" in skill
     derive = skill.index("grep '^\\[GNUPG:\\] VALIDSIG ' | cut -d' ' -f12")
-    check = skill.index("if curl -fsSL https://github.com/todofixthis.gpg \\")
+    assert "gpg_url=https://github.com/todofixthis.gpg" in skill
+    check = skill.index('curl -fsSL "$gpg_url"')
     clearsign = skill.index("--clearsign release-<version>.md")
     assert derive < check < clearsign
 
